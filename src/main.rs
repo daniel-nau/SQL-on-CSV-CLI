@@ -1,10 +1,10 @@
-// src/main.rs
 use std::env;
 use regex::Regex;
 use std::error::Error;
 use std::fs;
 
 mod csv_reader;  // Import the csv_reader module
+mod aggregates;  // Import the aggregates module
 
 #[derive(Debug)]
 struct ParsedCommand {
@@ -52,6 +52,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Err("First argument must be --query".into());
     }
 
+    // TODO: Just do wc -l for COUNT(*) without a where clause
+
     match parse_query(sql_query) {
         Ok(command) => {
             println!("Parsed Command: {:?}", command);
@@ -65,8 +67,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             // Read the CSV file and process it
             let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
-            // println!("Headers: {:?}", headers);
-            // println!("{:?}", headers.join(","));
             println!("{}", headers.join(","));
             
             // Iterate over each record one at a time
@@ -74,19 +74,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 match result {
                     Ok(record) => {
                         // Here you can filter based on the condition if needed
-                        // Example: Only print records where column1 < 5 (as a string comparison)
                         if let Some(condition) = &command.condition {
                             // Add your logic to evaluate the condition here
                         }
 
-                        // Print the record
-                        // for (i, field) in record.iter().enumerate() {
-                        //     println!("Column {} ({}): {}", i, headers[i], field);
-                        // }
-
-                        // Print the record as CSV format
-                        let csv_row = record.iter().collect::<Vec<&str>>().join(",");
-                        println!("{}", csv_row);
+                        // Print the record in CSV format
+                        println!("{}", record.iter().collect::<Vec<&str>>().join(","));
                     }
                     Err(e) => {
                         eprintln!("Error reading record: {}", e);
