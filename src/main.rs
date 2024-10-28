@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match parse_query(sql_query) {
         Ok(command) => {
-            println!("Parsed Command: {:?}", command);
+            // println!("Parsed Command: {:?}", command);
             let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
 
             // Initialize Aggregates
@@ -80,14 +80,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
 
             // Print headers for debugging
-            println!("CSV Headers: {:?}", headers);
+            // println!("CSV Headers: {:?}", headers);
 
             // Process records
             for result in rdr.records() {
                 match result {
                     Ok(record) => {
                         // Print the record for debugging
-                        println!("Record: {:?}", record);
+                        // println!("Record: {:?}", record);
                         
                         // Check if the record meets the condition
                         let mut meets_condition = true;
@@ -100,13 +100,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 let operator = parts[1];
                                 let value: f64 = parts[2].parse().unwrap_or(f64::NAN); // Parse the right side of the condition
 
-                                println!("Checking condition for column '{}': {} {}", column_name, operator, value);
+                                // println!("Checking condition for column '{}': {} {}", column_name, operator, value);
                                 
                                 if let Some(column_index) = headers.iter().position(|h| h == column_name) {
                                     let field_value: f64 = record.get(column_index).unwrap_or("").parse().unwrap_or(f64::NAN);
 
                                     // Debug print for comparison
-                                    println!("Comparing field value {} with condition value {}", field_value, value);
+                                    // println!("Comparing field value {} with condition value {}", field_value, value);
 
                                     // Check the condition based on the operator
                                     meets_condition = match operator {
@@ -119,11 +119,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                                         _ => true, // If the operator is not recognized, don't filter
                                     };
                                 } else {
-                                    println!("Warning: Column '{}' not found in headers.", column_name);
+                                    // println!("Warning: Column '{}' not found in headers.", column_name);
                                     meets_condition = false; // Force condition to false if column not found
                                 }
                             } else {
-                                println!("Warning: Invalid condition format. Expected format: 'column operator value'.");
+                                // println!("Warning: Invalid condition format. Expected format: 'column operator value'.");
                                 meets_condition = false; // Force condition to false for invalid format
                             }
                         }
@@ -132,28 +132,28 @@ fn main() -> Result<(), Box<dyn Error>> {
                         if meets_condition {
                             for (i, field) in record.iter().enumerate() {
                                 if let Ok(value) = field.parse::<f64>() {
-                                    println!("Parsed value: {} from column {}", value, headers[i]);
+                                    // println!("Parsed value: {} from column {}", value, headers[i]);
                                     
                                     // Use the full function name for lookup
                                     for func in &command.columns {
                                         if func.contains(&headers[i]) {
                                             // Debug before applying
-                                            println!("Applying {} to aggregate for {}", value, func);
+                                            // println!("Applying {} to aggregate for {}", value, func);
                                             if let Some(agg) = aggregates.functions.get_mut(func) {
                                                 agg.apply(value);
                                                 // Debug after applying
-                                                println!("Aggregate state after applying: {:?}", agg);
+                                                // println!("Aggregate state after applying: {:?}", agg);
                                             } else {
-                                                println!("Warning: No aggregate function found for '{}'.", func);
+                                                // println!("Warning: No aggregate function found for '{}'.", func);
                                             }
                                         }
                                     }
                                 } else {
-                                    println!("Warning: Failed to parse value '{}', skipping.", field);
+                                    // println!("Warning: Failed to parse value '{}', skipping.", field);
                                 }
                             }
                         } else {
-                            println!("Record does not meet condition, skipping: {:?}", record);
+                            // println!("Record does not meet condition, skipping: {:?}", record);
                         }
 
                     }
@@ -165,7 +165,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             // Output results in a simplified format
             let results = aggregates.results(&command.columns);
-            println!("Results: {:?}", results);
+            // println!("Results: {:?}", results);
 
             // Print each aggregate function with its result
             for column in &command.columns {
