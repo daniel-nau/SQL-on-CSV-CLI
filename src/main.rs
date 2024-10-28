@@ -112,10 +112,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             } else {
                 // Basic column selection
                 let column_indexes: Vec<_> = command.columns.iter()
-                    .filter_map(|col| headers.iter().position(|h| h == col))
-                    .collect();
+                .filter_map(|col| headers.iter().position(|h| h == col))
+                .collect();
 
-                println!("{:?}", command.columns); // Print header row
+                // Print header row
+                println!("{}", command.columns.join(", "));
 
                 for result in rdr.records() {
                     let record = result?;
@@ -125,7 +126,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         let selected_fields: Vec<&str> = column_indexes.iter()
                             .map(|&index| record.get(index).unwrap_or(""))
                             .collect();
-                        println!("{:?}", selected_fields);
+                        println!("{}", selected_fields.join(", "));
                     }
                 }
             }
