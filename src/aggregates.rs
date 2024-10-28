@@ -1,96 +1,117 @@
 use std::collections::HashMap;
+use std::fmt::Debug;
 
-pub trait Aggregate {
+pub trait Aggregate: Debug {
     fn apply(&mut self, value: f64);
     fn result(&self) -> f64;
 }
 
-pub struct Min {
-    min: Option<f64>,
-}
-
-impl Min {
-    pub fn new() -> Self {
-        Min { min: None }
-    }
-}
-
-impl Aggregate for Min {
-    fn apply(&mut self, value: f64) {
-        self.min = Some(self.min.map_or(value, |min| min.min(value)));
-    }
-
-    fn result(&self) -> f64 {
-        self.min.unwrap_or(f64::NAN)
-    }
-}
-
-pub struct Max {
-    max: Option<f64>,
-}
-
-impl Max {
-    pub fn new() -> Self {
-        Max { max: None }
-    }
-}
-
-impl Aggregate for Max {
-    fn apply(&mut self, value: f64) {
-        self.max = Some(self.max.map_or(value, |max| max.max(value)));
-    }
-
-    fn result(&self) -> f64 {
-        self.max.unwrap_or(f64::NAN)
-    }
-}
-
+#[derive(Debug)]
 pub struct Sum {
-    sum: f64,
+    total: f64,
 }
 
 impl Sum {
     pub fn new() -> Self {
-        Sum { sum: 0.0 }
+        Sum { total: 0.0 }
     }
 }
 
 impl Aggregate for Sum {
     fn apply(&mut self, value: f64) {
-        self.sum += value;
+        self.total += value;
     }
 
     fn result(&self) -> f64 {
-        self.sum
+        self.total
     }
 }
 
+#[derive(Debug)]
 pub struct Avg {
-    sum: f64,
+    total: f64,
     count: usize,
 }
 
 impl Avg {
     pub fn new() -> Self {
-        Avg { sum: 0.0, count: 0 }
+        Avg { total: 0.0, count: 0 }
     }
 }
 
 impl Aggregate for Avg {
     fn apply(&mut self, value: f64) {
-        self.sum += value;
+        self.total += value;
         self.count += 1;
     }
 
     fn result(&self) -> f64 {
         if self.count > 0 {
-            self.sum / self.count as f64
+            self.total / self.count as f64
         } else {
             f64::NAN
         }
     }
 }
 
+#[derive(Debug)]
+pub struct Min {
+    min_value: f64,
+    initialized: bool,
+}
+
+impl Min {
+    pub fn new() -> Self {
+        Min { min_value: f64::INFINITY, initialized: false }
+    }
+}
+
+impl Aggregate for Min {
+    fn apply(&mut self, value: f64) {
+        if !self.initialized || value < self.min_value {
+            self.min_value = value;
+            self.initialized = true;
+        }
+    }
+
+    fn result(&self) -> f64 {
+        if self.initialized {
+            self.min_value
+        } else {
+            f64::NAN
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Max {
+    max_value: f64,
+    initialized: bool,
+}
+
+impl Max {
+    pub fn new() -> Self {
+        Max { max_value: f64::NEG_INFINITY, initialized: false }
+    }
+}
+
+impl Aggregate for Max {
+    fn apply(&mut self, value: f64) {
+        if !self.initialized || value > self.max_value {
+            self.max_value = value;
+            self.initialized = true;
+        }
+    }
+
+    fn result(&self) -> f64 {
+        if self.initialized {
+            self.max_value
+        } else {
+            f64::NAN
+        }
+    }
+}
+#[derive(Debug)]
 pub struct Count {
     count: usize,
 }
@@ -111,8 +132,9 @@ impl Aggregate for Count {
     }
 }
 
+#[derive(Debug)]
 pub struct Aggregates {
-    pub functions: HashMap<String, Box<dyn Aggregate>>, // Column name mapped to its aggregate function
+    pub functions: HashMap<String, Box<dyn Aggregate>>,
 }
 
 impl Aggregates {
@@ -126,10 +148,13 @@ impl Aggregates {
         self.functions.insert(column_name, aggregate);
     }
 
-    pub fn results(&self) -> HashMap<String, f64> {
-        self.functions
+    pub fn results(&self, columns: &[String]) -> HashMap<String, f64> {
+        columns
             .iter()
-            .map(|(col, agg)| (col.clone(), agg.result()))
+            .map(|col| {
+                let result = self.functions.get(col).map_or(f64::NAN, |agg| agg.result());
+                (col.clone(), result)
+            })
             .collect()
     }
 }
