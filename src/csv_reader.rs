@@ -1,22 +1,19 @@
-// src/csv_reader.rs
 use std::error::Error;
 use std::fs::File;
 use csv::{ReaderBuilder, StringRecord};
 
-pub fn read_csv(file_path: &str) -> Result<(Vec<String>, Vec<StringRecord>), Box<dyn Error>> {
+pub fn read_csv(file_path: &str) -> Result<(Vec<String>, csv::Reader<File>), Box<dyn Error>> {
     // Open the CSV file
     let file = File::open(file_path)?;
 
-    // Create a CSV reader from the file
+    // Create a CSV reader with flexible options
     let mut rdr = ReaderBuilder::new()
-        .has_headers(true)  // Assumes the first line is headers
+        .has_headers(true) // Assuming the CSV has headers
+        // .flexible(true)    // Allow for flexible column formats
         .from_reader(file);
 
     // Get the headers (first row) to know column names
-    let headers = rdr.headers()?.iter().map(|s| s.to_string()).collect();
+    let headers = rdr.headers()?.iter().map(|s| s.to_string()).collect::<Vec<String>>();
 
-    // Collect all records into a Vec<StringRecord>
-    let records: Vec<StringRecord> = rdr.records().collect::<Result<_, _>>()?;
-
-    Ok((headers, records))
+    Ok((headers, rdr))
 }

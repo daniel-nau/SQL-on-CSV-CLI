@@ -64,13 +64,33 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
 
             // Read the CSV file and process it
-            let (headers, records) = csv_reader::read_csv(&command.data_file)?;
+            let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
+            // println!("Headers: {:?}", headers);
+            // println!("{:?}", headers.join(","));
+            println!("{}", headers.join(","));
             
-            // Example: Print out headers and records
-            println!("Headers: {:?}", headers);
-            for record in records {
-                for (i, field) in record.iter().enumerate() {
-                    println!("Column {} ({}): {}", i, headers[i], field);
+            // Iterate over each record one at a time
+            for result in rdr.records() {
+                match result {
+                    Ok(record) => {
+                        // Here you can filter based on the condition if needed
+                        // Example: Only print records where column1 < 5 (as a string comparison)
+                        if let Some(condition) = &command.condition {
+                            // Add your logic to evaluate the condition here
+                        }
+
+                        // Print the record
+                        // for (i, field) in record.iter().enumerate() {
+                        //     println!("Column {} ({}): {}", i, headers[i], field);
+                        // }
+
+                        // Print the record as CSV format
+                        let csv_row = record.iter().collect::<Vec<&str>>().join(",");
+                        println!("{}", csv_row);
+                    }
+                    Err(e) => {
+                        eprintln!("Error reading record: {}", e);
+                    }
                 }
             }
         }
