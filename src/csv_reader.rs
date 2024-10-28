@@ -1,6 +1,6 @@
 use std::error::Error;
 use std::fs::File;
-use csv::{ReaderBuilder, StringRecord};
+use csv::{ReaderBuilder};
 
 pub fn read_csv(file_path: &str) -> Result<(Vec<String>, csv::Reader<File>), Box<dyn Error>> {
     // Open the CSV file
