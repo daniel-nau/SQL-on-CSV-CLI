@@ -9,3 +9,4 @@ edition = "2021"
 csv = "1.1"             # For reading and processing CSV files
 sqlparser = "0.12"      # For SQL-like parsing, if you want to leverage an existing parser
 clap = { version = "4.0", features = ["derive"] }
+regex = "1"
