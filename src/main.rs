@@ -16,9 +16,7 @@ fn parse_query(query: &str) -> Result<ParsedCommand, String> {
     let re = Regex::new(r"(?i)SELECT\s+(?P<columns>.+?)\s+FROM\s+(?P<data_file>[\w/]+\.csv)(?:\s+WHERE\s+(?P<condition>.+))?").unwrap();
 
     if let Some(caps) = re.captures(query) {
-        let columns = caps["columns"].split(',')
-            .map(|col| col.trim().to_string())
-            .collect();
+        let columns = caps["columns"].split(',').map(|col| col.trim().to_string()).collect();
         
         let data_file = caps["data_file"].to_string();
         let condition = caps.name("condition").map(|m| m.as_str().to_string());
@@ -34,9 +32,11 @@ fn parse_query(query: &str) -> Result<ParsedCommand, String> {
 }
 
 fn is_aggregate_function(column: &str) -> bool {
-    column.starts_with("SUM(") || column.starts_with("AVG(") ||
-    column.starts_with("MIN(") || column.starts_with("MAX(") ||
-    column.starts_with("COUNT(")
+    column.starts_with("SUM(") 
+    || column.starts_with("AVG(") 
+    || column.starts_with("MIN(") 
+    || column.starts_with("MAX(") 
+    || column.starts_with("COUNT(")
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
 
             // Separate aggregate functions from basic column selections
-            let is_aggregate_query = command.columns.iter().any(|col| is_aggregate_function(col));
+            let is_aggregate_query: bool = command.columns.iter().any(|col| is_aggregate_function(col));
 
             if is_aggregate_query {
                 // Initialize Aggregates
@@ -111,9 +111,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             } else {
                 // Basic column selection
-                let column_indexes: Vec<_> = command.columns.iter()
-                .filter_map(|col| headers.iter().position(|h| h == col))
-                .collect();
+                let column_indexes: Vec<_> = command.columns.iter().filter_map(|col| headers.iter().position(|h| h == col)).collect();
 
                 // Print header row
                 println!("{}", command.columns.join(", "));
@@ -123,9 +121,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let meets_condition = check_condition(&command, &headers, &record);
 
                     if meets_condition {
-                        let selected_fields: Vec<&str> = column_indexes.iter()
-                            .map(|&index| record.get(index).unwrap_or(""))
-                            .collect();
+                        let selected_fields: Vec<&str> = column_indexes.iter().map(|&index| record.get(index).unwrap_or("")).collect();
                         println!("{}", selected_fields.join(", "));
                     }
                 }
