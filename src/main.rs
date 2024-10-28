@@ -1,14 +1,14 @@
 use std::env;
 use regex::Regex;
 use std::error::Error;
-use csv::StringRecord;
+// use csv::StringRecord;
 
 mod csv_reader;  // Import the csv_reader module
 mod aggregates;  // Import the aggregates module
 
 #[derive(Debug)]
 struct ParsedCommand {
-    operation: String,
+    // operation: String,
     columns: Vec<String>,
     data_file: String,
     condition: Option<String>,
@@ -26,7 +26,7 @@ fn parse_query(query: &str) -> Result<ParsedCommand, String> {
         let condition = caps.name("condition").map(|m| m.as_str().to_string());
 
         Ok(ParsedCommand {
-            operation: "SELECT".to_string(),
+            // operation: "SELECT".to_string(),
             columns,
             data_file,
             condition,
@@ -38,7 +38,7 @@ fn parse_query(query: &str) -> Result<ParsedCommand, String> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 4 {
+    if args.len() != 3 {
         eprintln!("Usage: {} --query \"<SQL Query>\"", args[0]);
         return Err("Invalid number of arguments".into());
     }
@@ -53,8 +53,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match parse_query(sql_query) {
         Ok(command) => {
-            // println!("Parsed Command: {:?}", command);
             let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
+            
+            // println!("Parsed Command: {:?}", command);
 
             // Initialize Aggregates
             let mut aggregates: aggregates::Aggregates = aggregates::Aggregates::new();
@@ -62,19 +63,19 @@ fn main() -> Result<(), Box<dyn Error>> {
             // Identify which columns to apply aggregates on
             for column in &command.columns {
                 if column.starts_with("SUM(") {
-                    let col_name = &column[4..column.len() - 1]; // Remove "SUM(" and ")"
+                    // let col_name = &column[4..column.len() - 1]; // Remove "SUM(" and ")"
                     aggregates.add_function(column.clone(), Box::new(aggregates::Sum::new())); // Use full column name
                 } else if column.starts_with("AVG(") {
-                    let col_name = &column[4..column.len() - 1]; // Remove "AVG(" and ")"
+                    // let col_name = &column[4..column.len() - 1]; // Remove "AVG(" and ")"
                     aggregates.add_function(column.clone(), Box::new(aggregates::Avg::new())); // Use full column name
                 } else if column.starts_with("MIN(") {
-                    let col_name = &column[4..column.len() - 1]; // Remove "MIN(" and ")"
+                    // let col_name = &column[4..column.len() - 1]; // Remove "MIN(" and ")"
                     aggregates.add_function(column.clone(), Box::new(aggregates::Min::new())); // Use full column name
                 } else if column.starts_with("MAX(") {
-                    let col_name = &column[4..column.len() - 1]; // Remove "MAX(" and ")"
+                    // let col_name = &column[4..column.len() - 1]; // Remove "MAX(" and ")"
                     aggregates.add_function(column.clone(), Box::new(aggregates::Max::new())); // Use full column name
                 } else if column.starts_with("COUNT(") {
-                    let col_name = &column[6..column.len() - 1]; // Remove "COUNT(" and ")"
+                    // let col_name = &column[6..column.len() - 1]; // Remove "COUNT(" and ")"
                     aggregates.add_function(column.clone(), Box::new(aggregates::Count::new())); // Use full column name
                 }
             }
