@@ -3,9 +3,9 @@
     - Add support for multiple conditions in the WHERE clause with logical operators (AND, OR)
     - Optimize and explore alternatives for better performance (consider avoiding Vecs where possible)
     - Print out like sql does
+    - Ensure robust error handling, especially for edge cases like COUNT(*) with a condition
     - Prepare for release and strip the binary
     - Run thorough testing and benchmarking
-    - Ensure robust error handling, especially for edge cases like COUNT(*) with a condition
 */
 
 use std::env;
