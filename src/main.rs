@@ -1,11 +1,13 @@
 /*
     TODO:
-    - Add support for multiple conditions in the WHERE clause with logical operators (AND, OR)
-    - Optimize and explore alternatives for better performance (consider avoiding Vecs where possible)
     - Print out like sql does
     - Ensure robust error handling, especially for edge cases like COUNT(*) with a condition
+    - Clean up code
+    - Optimize and explore alternatives for better performance (consider avoiding Vecs where possible)
+    - Refactor code into smaller, more modular functions
+    - Document the code and provide examples
     - Prepare for release and strip the binary
-    - Run thorough testing and benchmarking
+    - Run thorough testing and benchmarking (add automated tests?)
 */
 
 use std::env;
