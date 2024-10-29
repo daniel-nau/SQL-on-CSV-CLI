@@ -1,13 +1,11 @@
 /*
     TODO:
-    -Add support for multiple conditions in the WHERE clause (logical operators (AND, OR))
-    -Optimization/check to see if there are better ways to do certain things (see about jumping through different columns)
-    -Search for things to avoid (vecs?)
-    -Add COUNT(*) support (wc -l)
-    -Select * support
-    -Make release and strip the binary
-    -Testing/benchmarking
-    -Make sure to handle errors/edge cases properly (like COUNT(*) with a condition)
+    - Add support for multiple conditions in the WHERE clause with logical operators (AND, OR)
+    - Optimize and explore alternatives for better performance (consider avoiding Vecs where possible)
+    - Implement support for "SELECT *" syntax
+    - Prepare for release and strip the binary
+    - Run thorough testing and benchmarking
+    - Ensure robust error handling, especially for edge cases like COUNT(*) with a condition
 */
 
 use std::env;
