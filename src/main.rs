@@ -2,6 +2,11 @@
     TODO:
     - Add support for SELECT * with conditions
     - Make it to be able to have a path with a ../ or ./ at the beginning and _ in file name like original Chicago crime data name
+        - And spaces in strings of column names? (csv and query support) 
+    - Do more testing and double check to see which parts of the code are slow compared to csvsql
+        - Max/Min/Avg/Sum kinda slow
+    - Jump to field we are comparing to with the WHERE clause
+    
     - Add support for strings
     - Print out like sql does or just print out like CSV?
     - Print out data at the end or as it's processed? Speed vs. memory?
