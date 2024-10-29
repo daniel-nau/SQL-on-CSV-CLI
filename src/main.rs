@@ -2,6 +2,7 @@
     TODO:
     - Print out like sql does
     - Ensure robust error handling, especially for edge cases like COUNT(*) with a condition
+    - Add spaces after commas in the SELECT * case
     - Clean up code
     - Optimize and explore alternatives for better performance (consider avoiding Vecs where possible)
     - Refactor code into smaller, more modular functions
@@ -51,11 +52,11 @@ fn parse_query(query: &str) -> Result<ParsedCommand, String> {
 
 // Helper function to check if a column specifies an aggregate function
 fn is_aggregate_function(column: &str) -> bool {
-    column.starts_with("SUM(") 
+    column == "COUNT(*)"
+    || column.starts_with("SUM(") 
     || column.starts_with("AVG(") 
     || column.starts_with("MIN(") 
     || column.starts_with("MAX(") 
-    || column.starts_with("COUNT(")
 }
 
 // Special function to handle "SELECT COUNT(*) FROM <file>" using wc -l for efficiency
@@ -72,6 +73,24 @@ fn count_lines_excluding_header(file_path: &str) -> Result<usize, Box<dyn Error>
     
     // Subtract one to exclude the header row
     Ok(line_count - 1)
+}
+
+// Function to count rows based on a condition
+fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<dyn Error>> {
+    // Read the CSV file and get headers
+    let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
+
+    let mut count = 0;
+
+    // Process records and count those that meet the condition
+    for result in rdr.records() {
+        let record = result?;
+        if check_condition(&ParsedCommand { columns: vec![], data_file: file_path.to_string(), condition: Some(condition.to_string()) }, &headers, &record) {
+            count += 1;
+        }
+    }
+
+    Ok(count)
 }
 
 // Special function to print all rows of a file using `cat` ("SELECT * FROM <file>")
@@ -156,94 +175,98 @@ fn main() -> Result<(), Box<dyn Error>> {
     match parse_query(sql_query) {
         Ok(command) => {
             // Special case for "SELECT COUNT(*) FROM <file>"
-            if command.columns.len() == 1 && command.columns[0] == "COUNT(*)" && command.condition.is_none() {
-                // Use the optimized line counting function
-                match count_lines_excluding_header(&command.data_file) {
-                    Ok(count) => {
-                        println!("COUNT(*): {} (excluding header)", count);
-                        return Ok(());
+            if command.columns.len() == 1 && command.columns[0] == "COUNT(*)" {
+                // Handle count with or without a condition
+                if command.condition.is_none() {
+                    // Use the optimized line counting function
+                    match count_lines_excluding_header(&command.data_file) {
+                        Ok(count) => {
+                            println!("COUNT(*): {} (excluding header)", count);
+                        }
+                        Err(e) => {
+                            eprintln!("Error counting lines: {}", e);
+                            return Err(e);
+                        }
                     }
-                    Err(e) => {
-                        eprintln!("Error counting lines: {}", e);
-                        return Err(e);
-                    }
+                } else {
+                    // Count with a condition
+                    let total_count = count_with_condition(&command.data_file, command.condition.as_ref().unwrap())?;
+                    println!("COUNT(*): {} (including condition)", total_count);
                 }
-            }
-
-            // Special case for "SELECT * FROM <file>"
-            if command.columns.len() == 1 && command.columns[0] == "*" && command.condition.is_none() {
+            } else if command.columns.len() == 1 && command.columns[0] == "*" && command.condition.is_none() {
+                // Special case for "SELECT * FROM <file>"
                 return print_all_rows(&command.data_file);
-            }
-            
-            // Read the CSV file and get headers
-            let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
+            } else {
+                // Read the CSV file and get headers
+                let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
 
-            // Check if any column is an aggregate function
-            let is_aggregate_query: bool = command.columns.iter().any(|col| is_aggregate_function(col));
+                // Check if any column is an aggregate function
+                let is_aggregate_query: bool = command.columns.iter().any(|col| is_aggregate_function(col));
 
-            if is_aggregate_query {
-                // Initialize an Aggregates instance to store function results
-                let mut aggregates: aggregates::Aggregates = aggregates::Aggregates::new();
+                if is_aggregate_query {
+                    // Initialize an Aggregates instance to store function results
+                    let mut aggregates: aggregates::Aggregates = aggregates::Aggregates::new();
 
-                // Register each aggregate function
-                for column in &command.columns {
-                    if column.starts_with("SUM(") {
-                        aggregates.add_function(column.clone(), Box::new(aggregates::Sum::new()));
-                    } else if column.starts_with("AVG(") {
-                        aggregates.add_function(column.clone(), Box::new(aggregates::Avg::new()));
-                    } else if column.starts_with("MIN(") {
-                        aggregates.add_function(column.clone(), Box::new(aggregates::Min::new()));
-                    } else if column.starts_with("MAX(") {
-                        aggregates.add_function(column.clone(), Box::new(aggregates::Max::new()));
-                    } else if column.starts_with("COUNT(") {
-                        aggregates.add_function(column.clone(), Box::new(aggregates::Count::new()));
+                    // Register each aggregate function
+                    for column in &command.columns {
+                        if column.starts_with("SUM(") {
+                            aggregates.add_function(column.clone(), Box::new(aggregates::Sum::new()));
+                        } else if column.starts_with("AVG(") {
+                            aggregates.add_function(column.clone(), Box::new(aggregates::Avg::new()));
+                        } else if column.starts_with("MIN(") {
+                            aggregates.add_function(column.clone(), Box::new(aggregates::Min::new()));
+                        } else if column.starts_with("MAX(") {
+                            aggregates.add_function(column.clone(), Box::new(aggregates::Max::new()));
+                        } else if column.starts_with("COUNT(") {
+                            aggregates.add_function(column.clone(), Box::new(aggregates::Count::new()));
+                        }
                     }
-                }
 
-                // Process each record, applying aggregates if it meets the condition
-                for result in rdr.records() {
-                    let record = result?;
-                    if check_condition(&command, &headers, &record) {
-                        for (i, field) in record.iter().enumerate() {
-                            if let Ok(value) = field.parse::<f64>() {
-                                for func in &command.columns {
-                                    if func.contains(&headers[i]) {
-                                        if let Some(agg) = aggregates.functions.get_mut(func) {
-                                            agg.apply(value);
+                    // Process each record, applying aggregates if it meets the condition
+                    for result in rdr.records() {
+                        let record = result?;
+                        if check_condition(&command, &headers, &record) {
+                            for (i, field) in record.iter().enumerate() {
+                                if let Ok(value) = field.parse::<f64>() {
+                                    for func in &command.columns {
+                                        if func.contains(&headers[i]) {
+                                            if let Some(agg) = aggregates.functions.get_mut(func) {
+                                                agg.apply(value);
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                // Output the results of each aggregate function
-                let results = aggregates.results(&command.columns);
-                for column in &command.columns {
-                    if let Some(result) = results.get(column) {
-                        println!("{}: {}", column, result);
-                    } else {
-                        println!("{}: NaN", column);
+                    // Output the results of each aggregate function
+                    let results = aggregates.results(&command.columns);
+                    for column in &command.columns {
+                        if let Some(result) = results.get(column) {
+                            println!("{}: {}", column, result);
+                        } else {
+                            println!("{}: NaN", column);
+                        }
                     }
-                }
-            } else {
-                // Handle basic column selection (non-aggregate queries)
-                let column_indexes: Vec<_> = command.columns.iter()
-                    .filter_map(|col| headers.iter().position(|h| h == col))
-                    .collect();
+                } else {
+                    // Handle basic column selection (non-aggregate queries)
+                    let column_indexes: Vec<_> = command.columns.iter()
+                        .filter_map(|col| headers.iter().position(|h| h == col))
+                        .collect();
 
-                // Print header row for selected columns
-                println!("{}", command.columns.join(", "));
+                    // Print header row for selected columns
+                    println!("{}", command.columns.join(", "));
 
-                // Process records, filtering and printing selected columns if they meet the condition
-                for result in rdr.records() {
-                    let record = result?;
-                    if check_condition(&command, &headers, &record) {
-                        let selected_fields: Vec<&str> = column_indexes.iter()
-                            .map(|&index| record.get(index).unwrap_or(""))
-                            .collect();
-                        println!("{}", selected_fields.join(", "));
+                    // Process records, filtering and printing selected columns if they meet the condition
+                    for result in rdr.records() {
+                        let record = result?;
+                        if check_condition(&command, &headers, &record) {
+                            let selected_fields: Vec<&str> = column_indexes.iter()
+                                .map(|&index| record.get(index).unwrap_or(""))
+                                .collect();
+                            println!("{}", selected_fields.join(", "));
+                        }
                     }
                 }
             }
