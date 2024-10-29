@@ -2,6 +2,7 @@
     TODO:
     - Add support for multiple conditions in the WHERE clause with logical operators (AND, OR)
     - Optimize and explore alternatives for better performance (consider avoiding Vecs where possible)
+    - Print out like sql does
     - Prepare for release and strip the binary
     - Run thorough testing and benchmarking
     - Ensure robust error handling, especially for edge cases like COUNT(*) with a condition
@@ -82,6 +83,57 @@ fn print_all_rows(file_path: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+// Modified helper function to evaluate compound WHERE clause with AND/OR
+fn check_condition(command: &ParsedCommand, headers: &[String], record: &csv::StringRecord) -> bool {
+    if let Some(cond) = &command.condition {
+        // Split conditions on OR, then split each OR clause on AND
+        let or_clauses: Vec<&str> = cond.split("OR").map(|s| s.trim()).collect();
+
+        for or_clause in or_clauses {
+            let and_clauses: Vec<&str> = or_clause.split("AND").map(|s| s.trim()).collect();
+
+            let mut and_result = true;
+            for and_clause in and_clauses {
+                if !evaluate_condition(and_clause, headers, record) {
+                    and_result = false;
+                    break;
+                }
+            }
+
+            if and_result {
+                return true;
+            }
+        }
+        false
+    } else {
+        true
+    }
+}
+
+// Helper function to evaluate a single condition
+fn evaluate_condition(condition: &str, headers: &[String], record: &csv::StringRecord) -> bool {
+    let parts: Vec<&str> = condition.split_whitespace().collect();
+    if parts.len() == 3 {
+        let column_name = parts[0];
+        let operator = parts[1];
+        let value: f64 = parts[2].parse().unwrap_or(f64::NAN);
+
+        if let Some(column_index) = headers.iter().position(|h| h == column_name) {
+            let field_value: f64 = record.get(column_index).unwrap_or("").parse().unwrap_or(f64::NAN);
+            return match operator {
+                "<" => field_value < value,
+                ">" => field_value > value,
+                "<=" => field_value <= value,
+                ">=" => field_value >= value,
+                "==" => field_value == value,
+                "!=" => field_value != value,
+                _ => false,
+            };
+        }
+    }
+    false
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     // Collect command-line arguments
     let args: Vec<String> = env::args().collect();
@@ -149,16 +201,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Process each record, applying aggregates if it meets the condition
                 for result in rdr.records() {
                     let record = result?;
-                    let meets_condition = check_condition(&command, &headers, &record);
-
-                    if meets_condition {
-                        // Apply each aggregate function for matching records
+                    if check_condition(&command, &headers, &record) {
                         for (i, field) in record.iter().enumerate() {
                             if let Ok(value) = field.parse::<f64>() {
                                 for func in &command.columns {
                                     if func.contains(&headers[i]) {
                                         if let Some(agg) = aggregates.functions.get_mut(func) {
-                                            agg.apply(value); // Apply the value to the aggregate function
+                                            agg.apply(value);
                                         }
                                     }
                                 }
@@ -188,10 +237,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Process records, filtering and printing selected columns if they meet the condition
                 for result in rdr.records() {
                     let record = result?;
-                    let meets_condition = check_condition(&command, &headers, &record);
-
-                    if meets_condition {
-                        // Collect values of selected columns for output
+                    if check_condition(&command, &headers, &record) {
                         let selected_fields: Vec<&str> = column_indexes.iter()
                             .map(|&index| record.get(index).unwrap_or(""))
                             .collect();
@@ -206,33 +252,4 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
-}
-
-// Helper function to evaluate the WHERE condition on each row
-fn check_condition(command: &ParsedCommand, headers: &[String], record: &csv::StringRecord) -> bool {
-    if let Some(cond) = &command.condition {
-        // Parse the condition into column name, operator, and value
-        let parts: Vec<&str> = cond.split_whitespace().collect();
-        if parts.len() == 3 {
-            let column_name = parts[0];
-            let operator = parts[1];
-            let value: f64 = parts[2].parse().unwrap_or(f64::NAN);
-
-            // Find the index of the column in the CSV headers
-            if let Some(column_index) = headers.iter().position(|h| h == column_name) {
-                let field_value: f64 = record.get(column_index).unwrap_or("").parse().unwrap_or(f64::NAN);
-                // Check the condition based on the operator
-                return match operator {
-                    "<" => field_value < value,
-                    ">" => field_value > value,
-                    "<=" => field_value <= value,
-                    ">=" => field_value >= value,
-                    "==" => field_value == value,
-                    "!=" => field_value != value,
-                    _ => false, // Unrecognized operator defaults to false
-                };
-            }
-        }
-    }
-    true // If no condition is provided, return true by default
 }
