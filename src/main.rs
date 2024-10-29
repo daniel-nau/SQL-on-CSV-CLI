@@ -2,7 +2,7 @@
     TODO:
     - Print out like sql does
     - Ensure robust error handling, especially for edge cases like COUNT(*) with a condition
-    - Add spaces after commas in the SELECT * case
+    - Add spaces after commas in the SELECT * case OR remove spaces from my output for consistency
     - Clean up code
     - Optimize and explore alternatives for better performance (consider avoiding Vecs where possible)
     - Refactor code into smaller, more modular functions
