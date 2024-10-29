@@ -1,7 +1,7 @@
 /*
     TODO:
     - Add support for SELECT * with conditions
-    - Make it to be able to have a path with a ../ or ./ at the beginning
+    - Make it to be able to have a path with a ../ or ./ at the beginning and _ in file name like original Chicago crime data name
     - Add support for strings
     - Print out like sql does or just print out like CSV?
     - Print out data at the end or as it's processed? Speed vs. memory?
@@ -16,6 +16,7 @@
     - Document the code and provide examples
     - Prepare for release and strip the binary
     - Run thorough testing and benchmarking (add automated tests?)
+        - Find alternative CSV files to test with (chicagoCrimeData kills csvkit csvsql)
 */
 
 use std::env;
