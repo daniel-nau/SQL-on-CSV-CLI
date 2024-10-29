@@ -1,10 +1,12 @@
 /*
     TODO:
     - Add support for SELECT * with conditions
+    - Add support for strings
     - Print out like sql does or just print out like CSV?
     - Print out data at the end or as it's processed? Speed vs. memory?
     - Ensure robust error handling
     - Add spaces after commas in the SELECT * case OR remove spaces from my output for consistency
+    - Add types?
     - Refactor code into smaller, more modular functions and clean up code
     - Optimize and explore alternatives for better performance ()
         - Consider avoiding Vecs where possible
@@ -80,7 +82,7 @@ fn count_lines_excluding_header(file_path: &str) -> Result<usize, Box<dyn Error>
     Ok(line_count - 1)
 }
 
-// Function to count rows based on a condition
+// Function to count rows based on a condition ("SELECT COUNT() WHERE <condition>")
 fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<dyn Error>> {
     // Read the CSV file and get headers
     let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
