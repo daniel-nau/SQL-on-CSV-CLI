@@ -1,6 +1,7 @@
 /*
     TODO:
     - Add support for SELECT * with conditions
+    - Make it to be able to have a path with a .. at the beginning
     - Add support for strings
     - Print out like sql does or just print out like CSV?
     - Print out data at the end or as it's processed? Speed vs. memory?
