@@ -4,12 +4,11 @@
     - Print out like sql does
     - Ensure robust error handling
     - Add spaces after commas in the SELECT * case OR remove spaces from my output for consistency
-    - Clean up code
+    - Refactor code into smaller, more modular functions and clean up code
     - Optimize and explore alternatives for better performance ()
         - Consider avoiding Vecs where possible
         - Use references instead of cloning strings
         - Look into other stuff
-    - Refactor code into smaller, more modular functions
     - Document the code and provide examples
     - Prepare for release and strip the binary
     - Run thorough testing and benchmarking (add automated tests?)
@@ -201,6 +200,21 @@ fn main() -> Result<(), Box<dyn Error>> {
             } else if command.columns.len() == 1 && command.columns[0] == "*" && command.condition.is_none() {
                 // Special case for "SELECT * FROM <file>"
                 return print_all_rows(&command.data_file);
+            } else if command.columns.len() == 1 && command.columns[0] == "*" && command.condition.is_some() {
+                // Case for "SELECT * FROM <file> WHERE <condition>"
+                let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
+
+                // Print the headers
+                println!("{}", headers.join(", "));
+
+                // Process and filter records
+                for result in rdr.records() {
+                    let record = result?;
+                    if check_condition(&command, &headers, &record) {
+                        let row: Vec<&str> = record.iter().collect();
+                        println!("{}", row.join(", "));
+                    }
+                }
             } else {
                 // Read the CSV file and get headers
                 let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
