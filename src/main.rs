@@ -2,7 +2,6 @@
     TODO:
     - Add support for multiple conditions in the WHERE clause with logical operators (AND, OR)
     - Optimize and explore alternatives for better performance (consider avoiding Vecs where possible)
-    - Implement support for "SELECT *" syntax
     - Prepare for release and strip the binary
     - Run thorough testing and benchmarking
     - Ensure robust error handling, especially for edge cases like COUNT(*) with a condition
@@ -82,7 +81,6 @@ fn print_all_rows(file_path: &str) -> Result<(), Box<dyn Error>> {
     print!("{}", String::from_utf8_lossy(&output.stdout));
     Ok(())
 }
-
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Collect command-line arguments
