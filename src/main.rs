@@ -1,11 +1,14 @@
 /*
     TODO:
+    - Add support for SELECT * with conditions
     - Print out like sql does
-    - Ensure robust error handling, especially for edge cases like COUNT(*) with a condition
-    - Add support for COUNT(*) with other aggregate functions 
+    - Ensure robust error handling
     - Add spaces after commas in the SELECT * case OR remove spaces from my output for consistency
     - Clean up code
-    - Optimize and explore alternatives for better performance (consider avoiding Vecs where possible)
+    - Optimize and explore alternatives for better performance ()
+        - Consider avoiding Vecs where possible
+        - Use references instead of cloning strings
+        - Look into other stuff
     - Refactor code into smaller, more modular functions
     - Document the code and provide examples
     - Prepare for release and strip the binary
@@ -58,6 +61,7 @@ fn is_aggregate_function(column: &str) -> bool {
     || column.starts_with("AVG(") 
     || column.starts_with("MIN(") 
     || column.starts_with("MAX(") 
+    || column.starts_with("COUNT(")
 }
 
 // Special function to handle "SELECT COUNT(*) FROM <file>" using wc -l for efficiency
@@ -174,7 +178,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Parse the query
     match parse_query(sql_query) {
-        Ok(command) => {
+        Ok(mut command) => {
             // Special case for "SELECT COUNT(*) FROM <file>"
             if command.columns.len() == 1 && command.columns[0] == "COUNT(*)" {
                 // Handle count with or without a condition
@@ -203,6 +207,18 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 // Check if any column is an aggregate function
                 let is_aggregate_query: bool = command.columns.iter().any(|col| is_aggregate_function(col));
+
+                // Special case for COUNT(*) with other aggregate functions. Change COUNT(*) to COUNT(header[0])
+                if command.columns.contains(&"COUNT(*)".to_string()) {
+                    let first_column = headers.get(0).unwrap_or(&"".to_string()).clone();
+                    command.columns = command.columns.iter().map(|col| {
+                        if col == "COUNT(*)" {
+                            format!("COUNT({})", first_column)
+                        } else {
+                            col.clone()
+                        }
+                    }).collect();
+                }
 
                 if is_aggregate_query {
                     // Initialize an Aggregates instance to store function results
@@ -244,8 +260,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                     // Output the results of each aggregate function
                     let results = aggregates.results(&command.columns);
                     for column in &command.columns {
+                        // Special case for COUNT(*) with other aggregate queries (use COUNT(*) label since we changed COUNT(*) to COUNT(headers[0]))
+                        let label = if column.starts_with("COUNT(") && column.contains(&headers[0]) {
+                            "COUNT(*)".to_string()
+                        } else {
+                            column.clone()
+                        };
                         if let Some(result) = results.get(column) {
-                            println!("{}: {}", column, result);
+                            println!("{}: {}", label, result);
                         } else {
                             println!("{}: NaN", column);
                         }
