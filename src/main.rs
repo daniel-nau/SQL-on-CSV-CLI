@@ -7,11 +7,13 @@
     -Select * support
     -Make release and strip the binary
     -Testing/benchmarking
+    -Make sure to handle errors/edge cases properly (like COUNT(*) with a condition)
 */
 
 use std::env;
 use regex::Regex;
 use std::error::Error;
+use std::process::Command;
 
 mod csv_reader;  // Import the csv_reader module for reading CSV files
 mod aggregates;  // Import the aggregates module for aggregate functions
@@ -56,6 +58,22 @@ fn is_aggregate_function(column: &str) -> bool {
     || column.starts_with("COUNT(")
 }
 
+// Special function to handle "SELECT COUNT(*) FROM <file>" using wc -l for efficiency
+fn count_lines_excluding_header(file_path: &str) -> Result<usize, Box<dyn Error>> {
+    // Use `wc -l` to get the line count
+    let output = Command::new("wc")
+        .arg("-l")
+        .arg(file_path)
+        .output()?;
+    
+    // Parse the output to get the line count as a number
+    let count_str = String::from_utf8_lossy(&output.stdout);
+    let line_count: usize = count_str.split_whitespace().next().unwrap().parse()?;
+    
+    // Subtract one to exclude the header row
+    Ok(line_count - 1)
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     // Collect command-line arguments
     let args: Vec<String> = env::args().collect();
@@ -75,6 +93,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Parse the query
     match parse_query(sql_query) {
         Ok(command) => {
+            // Special case for "SELECT COUNT(*) FROM <file>"
+            if command.columns.len() == 1 && command.columns[0] == "COUNT(*)" && command.condition.is_none() {
+                // Use the optimized line counting function
+                match count_lines_excluding_header(&command.data_file) {
+                    Ok(count) => {
+                        println!("COUNT(*): {} (excluding header)", count);
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        eprintln!("Error counting lines: {}", e);
+                        return Err(e);
+                    }
+                }
+            }
+
             // Read the CSV file and get headers
             let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
 
