@@ -4,6 +4,7 @@
     -Optimization/check to see if there are better ways to do certain things (see about jumping through different columns)
     -Search for things to avoid (vecs?)
     -Add COUNT(*) support (wc -l)
+    -Select * support
     -Make release and strip the binary
     -Testing/benchmarking
 */
