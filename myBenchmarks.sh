@@ -1,10 +1,12 @@
 #!/bin/bash
 
 # Number of runs
-num_runs=100
+num_runs=10
 
 # Command to be timed
-command="./target/release/csvsql --query \"SELECT MIN(Low) FROM data/HistoricalData_1730160199611.csv WHERE Open < 200\""
+# command="./target/release/csvsql --query \"SELECT MIN(Low) FROM data/HistoricalData_1730160199611.csv WHERE Open < 200\""
+# command="./target/release/csvsql --query \"SELECT AVG(District) FROM data/chicagoCrimeData.csv WHERE Year == 2015\""
+command="./target/release/csvsql --query \"SELECT AVG(low) FROM data/all_stocks_5yr.csv\""
 
 # Initialize total time
 total_time=0

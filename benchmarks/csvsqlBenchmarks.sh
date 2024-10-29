@@ -1,10 +1,13 @@
 #!/bin/bash
 
 # Number of runs
-num_runs=100
+num_runs=10
 
 # Command to be timed
-command="csvsql --query \"SELECT MIN(Low) FROM HistoricalData_1730160199611 WHERE Open < 200\" ../data/HistoricalData_1730160199611.csv"
+# command="csvsql --query \"SELECT MIN(Low) FROM HistoricalData_1730160199611 WHERE Open < 200\" ../data/HistoricalData_1730160199611.csv"
+command="csvsql --query \"SELECT AVG(low) FROM all_stocks_5yr\" ../data/all_stocks_5yr.csv"
+# INFO: The following command kills in the terminal. Not enough memory?
+# command="csvsql --query \"SELECT AVG(District) FROM chicagoCrimeData WHERE Year == 2015\" --snifflimit 0 --no-inference ../data/chicagoCrimeData.csv"
 
 # Initialize total time
 total_time=0
