@@ -72,6 +72,18 @@ fn count_lines_excluding_header(file_path: &str) -> Result<usize, Box<dyn Error>
     Ok(line_count - 1)
 }
 
+// Special function to print all rows of a file using `cat` ("SELECT * FROM <file>")
+fn print_all_rows(file_path: &str) -> Result<(), Box<dyn Error>> {
+    let output = Command::new("cat")
+        .arg(file_path)
+        .output()?;
+
+    // Print the file contents to stdout
+    print!("{}", String::from_utf8_lossy(&output.stdout));
+    Ok(())
+}
+
+
 fn main() -> Result<(), Box<dyn Error>> {
     // Collect command-line arguments
     let args: Vec<String> = env::args().collect();
@@ -106,6 +118,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
 
+            // Special case for "SELECT * FROM <file>"
+            if command.columns.len() == 1 && command.columns[0] == "*" && command.condition.is_none() {
+                return print_all_rows(&command.data_file);
+            }
+            
             // Read the CSV file and get headers
             let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
 
