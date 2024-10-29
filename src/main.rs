@@ -5,8 +5,7 @@
         - And spaces in strings of column names? (csv and query support) 
     - Do more testing and double check to see which parts of the code are slow compared to csvsql
         - Max/Min/Avg/Sum kinda slow
-    - Jump to field we are comparing to with the WHERE clause
-    
+    - Jump to field we are comparing to with the WHERE clause (map column names to index?)
     - Add support for strings
     - Print out like sql does or just print out like CSV?
     - Print out data at the end or as it's processed? Speed vs. memory?
