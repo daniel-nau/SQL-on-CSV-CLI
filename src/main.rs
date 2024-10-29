@@ -1,7 +1,8 @@
 /*
     TODO:
     - Add support for SELECT * with conditions
-    - Print out like sql does
+    - Print out like sql does or just print out like CSV?
+    - Print out data at the end or as it's processed? Speed vs. memory?
     - Ensure robust error handling
     - Add spaces after commas in the SELECT * case OR remove spaces from my output for consistency
     - Refactor code into smaller, more modular functions and clean up code
