@@ -1,5 +1,9 @@
 /*
     TODO:
+    - #1. Testing to make sure the outputs are correct
+    - #2. Do benchmarking with different files (sizes and widths) and queries
+    - #3. Generate flamegraphs for profiling and keep tracks of what I did to optimize for my report (different versions/executable names?)
+    - #4. Do improvements and optimizations
     - Add support for SELECT * with conditions
     - Make it to be able to have a path with a ../ or ./ at the beginning and _ in file name like original Chicago crime data name
         - And spaces in strings of column names? (csv and query support) 
