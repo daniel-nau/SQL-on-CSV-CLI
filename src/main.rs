@@ -315,14 +315,25 @@ fn main() -> Result<(), Box<dyn Error>> {
                     // Print header row for selected columns
                     println!("{}", command.columns.join(", "));
 
-                    // Process records, filtering and printing selected columns if they meet the condition
-                    for result in rdr.records() {
-                        let record = result?;
-                        if check_condition(&command, &headers, &record) {
+                    if command.condition.is_none() {
+                        // Process records without filtering
+                        for result in rdr.records() {
+                            let record = result?;
                             let selected_fields: Vec<&str> = column_indexes.iter()
                                 .map(|&index| record.get(index).unwrap_or(""))
                                 .collect();
                             println!("{}", selected_fields.join(", "));
+                        }
+                    } else {
+                        // Process records, filtering and printing selected columns if they meet the condition
+                        for result in rdr.records() {
+                            let record = result?;
+                            if check_condition(&command, &headers, &record) {
+                                let selected_fields: Vec<&str> = column_indexes.iter()
+                                    .map(|&index| record.get(index).unwrap_or(""))
+                                    .collect();
+                                println!("{}", selected_fields.join(", "));
+                            }
                         }
                     }
                 }
