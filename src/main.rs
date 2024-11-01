@@ -3,8 +3,10 @@
     - Add support for SELECT * with conditions
     - Make it to be able to have a path with a ../ or ./ at the beginning and _ in file name like original Chicago crime data name
         - And spaces in strings of column names? (csv and query support) 
+    - Map aggregate function to column name (or vice versa) and then map to column index
     - Do more testing and double check to see which parts of the code are slow compared to csvsql
         - Max/Min/Avg/Sum kinda slow
+    - See if SELECT without WHERE still uses check_condition?
     - Jump to field we are comparing to with the WHERE clause (map column names to index?)
     - Add support for strings
     - Print out like sql does or just print out like CSV?
@@ -17,8 +19,9 @@
         - Consider avoiding Vecs where possible
         - Use references instead of cloning strings
         - Look into other stuff
+        - Look into reader buffer size
     - Document the code and provide examples
-    - Prepare for release and strip the binary
+    - Prepare for release and strip the binary ([profile.release] optimizations)
     - Run thorough testing and benchmarking (add automated tests?)
         - Find alternative CSV files to test with (chicagoCrimeData kills csvkit csvsql)
 */
@@ -250,7 +253,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                     // Register each aggregate function
                     for column in &command.columns {
                         if column.starts_with("SUM(") {
+                            // println!("Column: {}", column);
+                            // println!("{:?}", Box::new(aggregates::Sum::new()));
                             aggregates.add_function(column.clone(), Box::new(aggregates::Sum::new()));
+                            // println!("{:?}", aggregates.functions);
                         } else if column.starts_with("AVG(") {
                             aggregates.add_function(column.clone(), Box::new(aggregates::Avg::new()));
                         } else if column.starts_with("MIN(") {
@@ -267,9 +273,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                         let record = result?;
                         if check_condition(&command, &headers, &record) {
                             for (i, field) in record.iter().enumerate() {
+                                // println!("i {}, field: {}", i, field);
                                 if let Ok(value) = field.parse::<f64>() {
                                     for func in &command.columns {
                                         if func.contains(&headers[i]) {
+                                            // println!("func: {}", func);
+                                            // println!("{:?}", &aggregates.functions);
+                                            // println!("{:?}", aggregates.functions.get_mut(func));
+                                            // println!("{:?}", &headers[i]);
                                             if let Some(agg) = aggregates.functions.get_mut(func) {
                                                 agg.apply(value);
                                             }
