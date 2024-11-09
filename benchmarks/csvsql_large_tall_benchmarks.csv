@@ -1,0 +1,2 @@
+Query,Total Time,Number of Runs,Average Time
+"SELECT COUNT(*) FROM large_tall",12316.05,10,1231.605000000

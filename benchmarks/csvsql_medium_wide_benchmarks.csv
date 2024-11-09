@@ -1,0 +1,7 @@
+Query,Total Time,Number of Runs,Average Time
+"SELECT COUNT(*) FROM medium_wide",1118.06,5,223.612000000
+"SELECT * FROM medium_wide",1116.98,5,223.396000000
+"SELECT col_200, col_500, col_800 FROM medium_wide",1108.35,5,221.670000000
+"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM medium_wide",1113.69,5,222.738000000
+"SELECT COUNT(*) FROM medium_wide WHERE col_200 < 0.5",1147.62,5,229.524000000
+"SELECT COUNT(*) FROM medium_wide WHERE col_200 < 0.5 AND col_500 > 0.2",1126.57,5,225.314000000

@@ -1,0 +1,17 @@
+Query,Total Time,Number of Runs,Average Time
+"SELECT COUNT(*) FROM small_wide",141.31,10,14.131000000
+"SELECT * FROM small_wide",154.75,10,15.475000000
+"SELECT col_200, col_500, col_800 FROM small_wide",127.26,10,12.726000000
+"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM small_wide",125.14,10,12.514000000
+"SELECT COUNT(*) FROM small_wide WHERE col_200 < 0.5",131.92,10,13.192000000
+"SELECT COUNT(*) FROM small_wide WHERE col_200 < 0.5 AND col_500 > 0.2",133.74,10,13.374000000
+"SELECT COUNT(*) FROM small_wide WHERE col_200 < 0.5 OR col_500 < 0.3",126.30,10,12.630000000
+"SELECT * FROM small_wide WHERE col_200 < 0.5",132.81,10,13.281000000
+"SELECT * FROM small_wide WHERE col_200 < 0.5 AND col_500 > 0.2",131.91,10,13.191000000
+"SELECT * FROM small_wide WHERE col_200 < 0.5 OR col_500 < 0.3",135.10,10,13.510000000
+"SELECT col_200, col_500, col_800 FROM small_wide WHERE col_200 < 0.5",125.30,10,12.530000000
+"SELECT col_200, col_500, col_800 FROM small_wide WHERE col_200 < 0.5 AND col_500 > 0.2",125.53,10,12.553000000
+"SELECT col_200, col_500, col_800 FROM small_wide WHERE col_200 < 0.5 OR col_500 < 0.3",126.26,10,12.626000000
+"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM small_wide WHERE col_200 < 0.5",125.83,10,12.583000000
+"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM small_wide WHERE col_200 < 0.5 AND col_500 > 0.2",125.38,10,12.538000000
+"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM small_wide WHERE col_200 < 0.5 OR col_500 < 0.3",125.18,10,12.518000000

@@ -1,0 +1,17 @@
+Query,Total Time,Number of Runs,Average Time
+"SELECT COUNT(*) FROM small_tall",125.52,10,12.552000000
+"SELECT * FROM small_tall",140.32,10,14.032000000
+"SELECT col_2, col_5, col_8 FROM small_tall",131.31,10,13.131000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM small_tall",123.79,10,12.379000000
+"SELECT COUNT(*) FROM small_tall WHERE col_2 < 0.5",123.97,10,12.397000000
+"SELECT COUNT(*) FROM small_tall WHERE col_2 < 0.5 AND col_5 > 0.2",126.98,10,12.698000000
+"SELECT COUNT(*) FROM small_tall WHERE col_2 < 0.5 OR col_5 < 0.3",124.91,10,12.491000000
+"SELECT * FROM small_tall WHERE col_2 < 0.5",132.38,10,13.238000000
+"SELECT * FROM small_tall WHERE col_2 < 0.5 AND col_5 > 0.2",130.71,10,13.071000000
+"SELECT * FROM small_tall WHERE col_2 < 0.5 OR col_5 < 0.3",135.85,10,13.585000000
+"SELECT col_2, col_5, col_8 FROM small_tall WHERE col_2 < 0.5",128.19,10,12.819000000
+"SELECT col_2, col_5, col_8 FROM small_tall WHERE col_2 < 0.5 AND col_5 > 0.2",126.30,10,12.630000000
+"SELECT col_2, col_5, col_8 FROM small_tall WHERE col_2 < 0.5 OR col_5 < 0.3",127.95,10,12.795000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM small_tall WHERE col_2 < 0.5",125.88,10,12.588000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM small_tall WHERE col_2 < 0.5 AND col_5 > 0.2",131.22,10,13.122000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM small_tall WHERE col_2 < 0.5 OR col_5 < 0.3",130.80,10,13.080000000

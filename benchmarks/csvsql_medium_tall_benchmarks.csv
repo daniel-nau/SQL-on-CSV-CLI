@@ -1,0 +1,13 @@
+Query,Total Time,Number of Runs,Average Time
+"SELECT COUNT(*) FROM medium_tall",604.65,5,120.930000000
+"SELECT * FROM medium_tall",691.83,5,138.366000000
+"SELECT col_2, col_5, col_8 FROM medium_tall",635.41,5,127.082000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM medium_tall",607.03,5,121.406000000
+"SELECT COUNT(*) FROM medium_tall WHERE col_2 < 0.5",608.65,5,121.730000000
+"SELECT COUNT(*) FROM medium_tall WHERE col_2 < 0.5 AND col_5 > 0.2",608.88,5,121.776000000
+"SELECT COUNT(*) FROM medium_tall WHERE col_2 < 0.5 OR col_5 < 0.3",603.20,5,120.640000000
+"SELECT * FROM medium_tall WHERE col_2 < 0.5",652.89,5,130.578000000
+"SELECT * FROM medium_tall WHERE col_2 < 0.5 AND col_5 > 0.2",640.73,5,128.146000000
+"SELECT * FROM medium_tall WHERE col_2 < 0.5 OR col_5 < 0.3",664.34,5,132.868000000
+"SELECT col_2, col_5, col_8 FROM medium_tall WHERE col_2 < 0.5",631.51,5,126.302000000
+"SELECT col_2, col_5, col_8 FROM medium_tall WHERE col_2 < 0.5 AND col_5 > 0.2",626.24,5,125.248000000
