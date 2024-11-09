@@ -11,3 +11,7 @@ Query,Total Time,Number of Runs,Average Time
 "SELECT * FROM medium_tall WHERE col_2 < 0.5 OR col_5 < 0.3",664.34,5,132.868000000
 "SELECT col_2, col_5, col_8 FROM medium_tall WHERE col_2 < 0.5",631.51,5,126.302000000
 "SELECT col_2, col_5, col_8 FROM medium_tall WHERE col_2 < 0.5 AND col_5 > 0.2",626.24,5,125.248000000
+"SELECT col_2, col_5, col_8 FROM medium_tall WHERE col_2 < 0.5 OR col_5 < 0.3",630.60,5,126.120000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM medium_tall WHERE col_2 < 0.5",604.71,5,120.942000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM medium_tall WHERE col_2 < 0.5 AND col_5 > 0.2",605.71,5,121.142000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM medium_tall WHERE col_2 < 0.5 OR col_5 < 0.3",608.87,5,121.774000000

@@ -29,15 +29,19 @@ wide_queries=(
     "SELECT * FROM \$table_name"
     "SELECT col_200, col_500, col_800 FROM \$table_name"
     "SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM \$table_name"
+    
     "SELECT COUNT(*) FROM \$table_name WHERE col_200 < 0.5"
     "SELECT COUNT(*) FROM \$table_name WHERE col_200 < 0.5 AND col_500 > 0.2"
     "SELECT COUNT(*) FROM \$table_name WHERE col_200 < 0.5 OR col_500 < 0.3"
+
     "SELECT * FROM \$table_name WHERE col_200 < 0.5"
     "SELECT * FROM \$table_name WHERE col_200 < 0.5 AND col_500 > 0.2"
     "SELECT * FROM \$table_name WHERE col_200 < 0.5 OR col_500 < 0.3"
+
     "SELECT col_200, col_500, col_800 FROM \$table_name WHERE col_200 < 0.5"
     "SELECT col_200, col_500, col_800 FROM \$table_name WHERE col_200 < 0.5 AND col_500 > 0.2"
     "SELECT col_200, col_500, col_800 FROM \$table_name WHERE col_200 < 0.5 OR col_500 < 0.3"
+
     "SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM \$table_name WHERE col_200 < 0.5"
     "SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM \$table_name WHERE col_200 < 0.5 AND col_500 > 0.2"
     "SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM \$table_name WHERE col_200 < 0.5 OR col_500 < 0.3"

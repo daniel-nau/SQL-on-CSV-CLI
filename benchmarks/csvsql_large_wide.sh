@@ -41,12 +41,13 @@ for query in "${queries[@]}"; do
     command="csvsql --query \"$query\" --tables $table_name $data_file"
     
     for i in $(seq 1 $num_runs); do
-        if [ $i -eq 1 ]; then
-            output_file="csvsql_large_wide_output.csv"
-            echo "$query" >> $output_file
-        else
-            output_file="/dev/null"
-        fi
+        # if [ $i -eq 1 ]; then
+        #     output_file="csvsql_large_wide_output.csv"
+        #     echo "$query" >> $output_file
+        # else
+        #     output_file="/dev/null"
+        # fi
+        output_file="/dev/null"
         
         run_time=$( { time -p bash -c "$command" >> $output_file; } 2>&1 | grep real | awk '{print $2}' )
         if [ $? -ne 0 ]; then

@@ -1,15 +1,17 @@
 Query,Total Time,Number of Runs,Average Time
-"SELECT COUNT(*) FROM $table_name",262.70,5,52.540000000
-"SELECT * FROM $table_name",431.40,5,86.280000000
-"SELECT col_200, col_500, col_800 FROM $table_name",259.12,5,51.824000000
-"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM $table_name",256.79,5,51.358000000
-"SELECT COUNT(*) FROM $table_name WHERE col_200 < 0.5",265.49,5,53.098000000
-"SELECT COUNT(*) FROM $table_name WHERE col_200 < 0.5 AND col_500 > 0.2",259.79,5,51.958000000
-"SELECT COUNT(*) FROM $table_name WHERE col_200 < 0.5 OR col_500 < 0.3",266.24,5,53.248000000
-"SELECT * FROM $table_name WHERE col_200 < 0.5",355.06,5,71.012000000
-"SELECT * FROM $table_name WHERE col_200 < 0.5 AND col_500 > 0.2",343.80,5,68.760000000
-"SELECT * FROM $table_name WHERE col_200 < 0.5 OR col_500 < 0.3",361.32,5,72.264000000
-"SELECT col_200, col_500, col_800 FROM $table_name WHERE col_200 < 0.5",256.59,5,51.318000000
-"SELECT col_200, col_500, col_800 FROM $table_name WHERE col_200 < 0.5 AND col_500 > 0.2",259.55,5,51.910000000
-"SELECT col_200, col_500, col_800 FROM $table_name WHERE col_200 < 0.5 OR col_500 < 0.3",262.26,5,52.452000000
-"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM $table_name WHERE col_200 < 0.5",270.73,5,54.146000000
+"SELECT COUNT(*) FROM $table_name",254.85,5,50.970000000
+"SELECT * FROM $table_name",423.79,5,84.758000000
+"SELECT col_200, col_500, col_800 FROM $table_name",258.78,5,51.756000000
+"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM $table_name",262.72,5,52.544000000
+"SELECT COUNT(*) FROM $table_name WHERE col_200 < 0.5",256.19,5,51.238000000
+"SELECT COUNT(*) FROM $table_name WHERE col_200 < 0.5 AND col_500 > 0.2",255.18,5,51.036000000
+"SELECT COUNT(*) FROM $table_name WHERE col_200 < 0.5 OR col_500 < 0.3",252.20,5,50.440000000
+"SELECT * FROM $table_name WHERE col_200 < 0.5",338.78,5,67.756000000
+"SELECT * FROM $table_name WHERE col_200 < 0.5 AND col_500 > 0.2",334.75,5,66.950000000
+"SELECT * FROM $table_name WHERE col_200 < 0.5 OR col_500 < 0.3",356.07,5,71.214000000
+"SELECT col_200, col_500, col_800 FROM $table_name WHERE col_200 < 0.5",266.64,5,53.328000000
+"SELECT col_200, col_500, col_800 FROM $table_name WHERE col_200 < 0.5 AND col_500 > 0.2",275.06,5,55.012000000
+"SELECT col_200, col_500, col_800 FROM $table_name WHERE col_200 < 0.5 OR col_500 < 0.3",254.66,5,50.932000000
+"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM $table_name WHERE col_200 < 0.5",262.92,5,52.584000000
+"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM $table_name WHERE col_200 < 0.5 AND col_500 > 0.2",254.68,5,50.936000000
+"SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM $table_name WHERE col_200 < 0.5 OR col_500 < 0.3",260.32,5,52.064000000

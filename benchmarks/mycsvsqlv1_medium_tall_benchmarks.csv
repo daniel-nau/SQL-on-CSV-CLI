@@ -1,0 +1,17 @@
+Query,Total Time,Number of Runs,Average Time
+"SELECT COUNT(*) FROM $table_name",.36,5,.072000000
+"SELECT * FROM $table_name",2.44,5,.488000000
+"SELECT col_2, col_5, col_8 FROM $table_name",7.54,5,1.508000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM $table_name",11.80,5,2.360000000
+"SELECT COUNT(*) FROM $table_name WHERE col_2 < 0.5",4.86,5,.972000000
+"SELECT COUNT(*) FROM $table_name WHERE col_2 < 0.5 AND col_5 > 0.2",5.96,5,1.192000000
+"SELECT COUNT(*) FROM $table_name WHERE col_2 < 0.5 OR col_5 < 0.3",5.84,5,1.168000000
+"SELECT * FROM $table_name WHERE col_2 < 0.5",7.28,5,1.456000000
+"SELECT * FROM $table_name WHERE col_2 < 0.5 AND col_5 > 0.2",7.56,5,1.512000000
+"SELECT * FROM $table_name WHERE col_2 < 0.5 OR col_5 < 0.3",9.09,5,1.818000000
+"SELECT col_2, col_5, col_8 FROM $table_name WHERE col_2 < 0.5",7.15,5,1.430000000
+"SELECT col_2, col_5, col_8 FROM $table_name WHERE col_2 < 0.5 AND col_5 > 0.2",7.36,5,1.472000000
+"SELECT col_2, col_5, col_8 FROM $table_name WHERE col_2 < 0.5 OR col_5 < 0.3",8.88,5,1.776000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM $table_name WHERE col_2 < 0.5",9.34,5,1.868000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM $table_name WHERE col_2 < 0.5 AND col_5 > 0.2",9.31,5,1.862000000
+"SELECT SUM(col_2), AVG(col_2), MAX(col_2) FROM $table_name WHERE col_2 < 0.5 OR col_5 < 0.3",11.73,5,2.346000000

@@ -73,11 +73,13 @@ for data_file in ./data/*.csv; do
         command="./benchmarks/csvsql_v1 --query \"${query//\$table_name/$table_name}\""
 
         for i in $(seq 1 $num_runs); do
-            if [ $i -eq 1 ]; then
-                run_time=$( { time -p bash -c "$command" >> $output_file; } 2>&1 | grep real | awk '{print $2}' )
-            else
-                run_time=$( { time -p bash -c "$command"; } 2>&1 | grep real | awk '{print $2}' )
-            fi
+            # if [ $i -eq 1 ]; then
+            #     run_time=$( { time -p bash -c "$command" >> $output_file; } 2>&1 | grep real | awk '{print $2}' )
+            # else
+            #     run_time=$( { time -p bash -c "$command"; } 2>&1 | grep real | awk '{print $2}' )
+            # fi
+            run_time=$( { time -p bash -c "$command" >> /dev/null; } 2>&1 | grep real | awk '{print $2}' )
+
             if [ $? -ne 0 ]; then
                 echo "Error running query: $query"
                 exit 1

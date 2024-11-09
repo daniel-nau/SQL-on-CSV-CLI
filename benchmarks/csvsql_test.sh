@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Number of runs
-num_runs=5
+num_runs=2
 
 # Data file
-data_file="../data/medium_tall.csv"
-table_name="medium_tall"
+data_file="../data/test.csv"
+table_name="test"
 
 # Queries to be tested
 queries=(
@@ -32,22 +32,20 @@ queries=(
 )
 
 # Output CSV header
-echo "Query,Total Time,Number of Runs,Average Time" > csvsql_medium_tall_benchmarks.csv
+echo "Query,Total Time,Number of Runs,Average Time" > csvsql_test_benchmarks.csv
 
 # Run each query multiple times and calculate the average time
 for query in "${queries[@]}"; do
-    # echo "In loop!"
     total_time=0
     command="csvsql --query \"$query\" --tables $table_name $data_file"
     
     for i in $(seq 1 $num_runs); do
-        # if [ $i -eq 1 ]; then
-        #     output_file="csvsql_medium_tall_output.csv"
-        #     echo "$query" >> $output_file
-        # else
-        #     output_file="/dev/null"
-        # fi
-        output_file="/dev/null"
+        if [ $i -eq 1 ]; then
+            output_file="csvsql_test_output.csv"
+            echo "$query" >> $output_file
+        else
+            output_file="/dev/null"
+        fi
         
         run_time=$( { time -p bash -c "$command" >> $output_file; } 2>&1 | grep real | awk '{print $2}' )
         if [ $? -ne 0 ]; then
@@ -55,11 +53,11 @@ for query in "${queries[@]}"; do
             exit 1
         fi
         total_time=$(echo "$total_time + $run_time" | bc)
-        # echo "Run $i: $run_time seconds" # TODO: Comment out for big runs
+        # $echo "Run $i: $run_time seconds" # TODO: Comment out for big runs
     done
     
     avg_time=$(echo "scale=9; $total_time / $num_runs" | bc)
-    echo "\"$query\",$total_time,$num_runs,$avg_time" >> csvsql_medium_tall_benchmarks.csv
+    echo "\"$query\",$total_time,$num_runs,$avg_time" >> csvsql_test_benchmarks.csv
 done
 
 echo "Script completed successfully!"
