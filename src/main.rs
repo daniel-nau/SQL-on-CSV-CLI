@@ -1,15 +1,24 @@
 /*
     TODO:
     - #1. Testing to make sure the outputs are correct
-    - #2. Do benchmarking with different files (sizes and widths) and queries
+    - #2. Do benchmarking with different files (sizes and widths) and queries (install csvkit and DuckDB on isengard) and increase # of runs if fast enough
     - #3. Generate flamegraphs for profiling and keep tracks of what I did to optimize for my report (different versions/executable names?)
-    - #4. Do improvements and optimizations
+    - #4. Do improvements and optimizations (UPDATE CARGO.TOML VERSION AND DO cargo pkgid TO SEE VERSIONS)
+    - TODO: COPY OVER BENCHMARKS SCRIPTS AND OUTPUTS FROM ISENGARD. CHANGES WERE MADE LOL
+    - Do test to see if duckdb is actually that slow
+    - Remove spaces after commas in output
+    - IN REPORT AND SLIDES, SHOW THAT TIME IS "REAL" TIME
+    - Do smaller files to make sure the output is the same
     - Add support for SELECT * with conditions
+    - Do something different than wc -l and cat for COUNT(*) and SELECT * respectively
+    - Look into making ReaderBuilder more efficient
+    - Use float32 instead of float64?
     - Make it to be able to have a path with a ../ or ./ at the beginning and _ in file name like original Chicago crime data name
         - And spaces in strings of column names? (csv and query support) 
     - Map aggregate function to column name (or vice versa) and then map to column index
     - Do more testing and double check to see which parts of the code are slow compared to csvsql
         - Max/Min/Avg/Sum kinda slow
+    - Use BufReader for COUNT(*) and SELECT *?
     - See if SELECT without WHERE still uses check_condition?
     - Jump to field we are comparing to with the WHERE clause (map column names to index?)
     - Add support for strings
@@ -25,7 +34,7 @@
         - Look into other stuff
         - Look into reader buffer size
     - Document the code and provide examples
-    - Prepare for release and strip the binary ([profile.release] optimizations)
+    - Prepare for release and strip the binary ([profile.release] optimizations (opt-level))
     - Run thorough testing and benchmarking (add automated tests?)
         - Find alternative CSV files to test with (chicagoCrimeData kills csvkit csvsql)
 */
