@@ -29,19 +29,15 @@ wide_queries=(
     "SELECT * FROM \$table_name"
     "SELECT col_200, col_500, col_800 FROM \$table_name"
     "SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM \$table_name"
-    
     "SELECT COUNT(*) FROM \$table_name WHERE col_200 < 0.5"
     "SELECT COUNT(*) FROM \$table_name WHERE col_200 < 0.5 AND col_500 > 0.2"
     "SELECT COUNT(*) FROM \$table_name WHERE col_200 < 0.5 OR col_500 < 0.3"
-
     "SELECT * FROM \$table_name WHERE col_200 < 0.5"
     "SELECT * FROM \$table_name WHERE col_200 < 0.5 AND col_500 > 0.2"
     "SELECT * FROM \$table_name WHERE col_200 < 0.5 OR col_500 < 0.3"
-
     "SELECT col_200, col_500, col_800 FROM \$table_name WHERE col_200 < 0.5"
     "SELECT col_200, col_500, col_800 FROM \$table_name WHERE col_200 < 0.5 AND col_500 > 0.2"
     "SELECT col_200, col_500, col_800 FROM \$table_name WHERE col_200 < 0.5 OR col_500 < 0.3"
-
     "SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM \$table_name WHERE col_200 < 0.5"
     "SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM \$table_name WHERE col_200 < 0.5 AND col_500 > 0.2"
     "SELECT SUM(col_200), AVG(col_200), MAX(col_200) FROM \$table_name WHERE col_200 < 0.5 OR col_500 < 0.3"
@@ -53,6 +49,9 @@ for data_file in ../data/*.csv; do
     base_name=$(basename "$data_file" .csv)
     output_file="duckdb_${base_name}_output.csv"
     echo "Query,Total Time,Number of Runs,Average Time" > $output_file
+
+    # Debug statement to print the base_name
+    echo "Processing file: $base_name"
 
     # Skip files starting with "large"
     if [[ "$base_name" == large* ]]; then
@@ -81,7 +80,17 @@ EOF
         "
 
         for i in $(seq 1 $num_runs); do
-            run_time=$( { time -p bash -c "$command" >> /dev/null; } 2>&1 | grep real | awk '{print $2}' )
+            # Create the table
+            duckdb database.db <<EOF
+DROP TABLE IF EXISTS $table_name;
+CREATE TABLE $table_name AS SELECT * FROM read_csv_auto('$data_file');
+EOF
+
+            # Time the query
+            run_time=$( { time -p duckdb database.db <<EOF
+${query//\$table_name/$table_name};
+EOF
+            } 2>&1 | grep real | awk '{print $2}' )
             if [ $? -ne 0 ]; then
                 echo "Error running query: $query"
                 exit 1
