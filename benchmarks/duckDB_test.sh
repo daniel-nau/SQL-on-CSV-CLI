@@ -88,8 +88,11 @@ EOF
 
             # Time the query
             run_time=$( { time -p duckdb database.db <<EOF
+.mode csv
+.header on
 ${query//\$table_name/$table_name};
 EOF
+} 2>&1 | grep real | awk '{print $2}' )
             } 2>&1 | grep real | awk '{print $2}' )
             if [ $? -ne 0 ]; then
                 echo "Error running query: $query"
