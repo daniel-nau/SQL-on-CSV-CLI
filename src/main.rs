@@ -123,7 +123,7 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
 }
 
 // Special function to print all rows of a file using `cat` ("SELECT * FROM <file>")
-fn print_all_rows(file_path: &str) -> Result<(), Box<dyn Error>> {
+fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
     let output = Command::new("cat")
         .arg(file_path)
         .output()?;
@@ -220,11 +220,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 } else {
                     // Count with a condition
                     let total_count = count_with_condition(&command.data_file, command.condition.as_ref().unwrap())?;
-                    println!("COUNT(*): {} (including condition)", total_count);
+                    println!("COUNT(*): {}", total_count);
                 }
             } else if command.columns.len() == 1 && command.columns[0] == "*" && command.condition.is_none() {
                 // Special case for "SELECT * FROM <file>"
-                return print_all_rows(&command.data_file);
+                return select_star(&command.data_file);
             } else if command.columns.len() == 1 && command.columns[0] == "*" && command.condition.is_some() {
                 // Case for "SELECT * FROM <file> WHERE <condition>"
                 let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
