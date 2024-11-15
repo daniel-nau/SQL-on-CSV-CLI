@@ -327,7 +327,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         .collect();
 
                     // Print header row for selected columns
-                    println!("{}", command.columns.join(", "));
+                    println!("{}", command.columns.join(","));
 
                     if command.condition.is_none() {
                         // Process records without filtering
@@ -336,7 +336,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                             let selected_fields: Vec<&str> = column_indexes.iter()
                                 .map(|&index| record.get(index).unwrap_or(""))
                                 .collect();
-                            println!("{}", selected_fields.join(", "));
+                            println!("{}", selected_fields.join(","));
                         }
                     } else {
                         // Process records, filtering and printing selected columns if they meet the condition
@@ -346,7 +346,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                                 let selected_fields: Vec<&str> = column_indexes.iter()
                                     .map(|&index| record.get(index).unwrap_or(""))
                                     .collect();
-                                println!("{}", selected_fields.join(", "));
+                                println!("{}", selected_fields.join(","));
                             }
                         }
                     }
