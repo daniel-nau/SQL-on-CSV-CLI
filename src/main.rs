@@ -43,7 +43,9 @@
 use std::env;
 use regex::Regex;
 use std::error::Error;
-use std::process::Command;
+// use std::process::Command;
+use std::io::{self, Write};
+
 
 mod csv_reader;  // Import the csv_reader module for reading CSV files
 mod aggregates;  // Import the aggregates module for aggregate functions
@@ -124,12 +126,140 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
 
 // Special function to print all rows of a file using `cat` ("SELECT * FROM <file>")
 fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
-    let output = Command::new("cat")
-        .arg(file_path)
-        .output()?;
+    // XXX: V1: 0.0336 seconds
+    // let _output = Command::new("cat")
+    //     .arg(file_path)
+    //     .output()?;
 
-    // Print the file contents to stdout
-    print!("{}", String::from_utf8_lossy(&output.stdout));
+    // Ok(())
+
+    // XXX: V2: 0.0733 seconds
+    // // Read the CSV file and get headers
+    // let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
+
+    // // Print headers
+    // println!("{}", headers.join(","));
+
+    // // Process and print each record
+    // for result in rdr.records() {
+    //     let record = result?;
+    //     println!("{}", record.iter().collect::<Vec<&str>>().join(","));
+    // }
+
+    // Ok(())
+
+    // XXX: V3: .0822 seconds
+    // // Read the CSV file and get headers
+    // let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
+
+    // // Print headers
+    // println!("{}", headers.join(","));
+
+    // // Process and print each record
+    // let mut record_string = String::new();
+    // for result in rdr.records() {
+    //     let record = result?;
+    //     record_string.clear();
+    //     for (i, field) in record.iter().enumerate() {
+    //         if i > 0 {
+    //             record_string.push(',');
+    //         }
+    //         record_string.push_str(field);
+    //     }
+    //     println!("{}", record_string);
+    // }
+
+    // Ok(())
+
+    // XXX: V4: .0663 seconds
+    // // Read the CSV file and get headers
+    // let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
+
+    // // Print headers
+    // println!("{}", headers.join(","));
+
+    // // Process and print each record
+    // let mut record_string = Vec::new();
+    // let stdout = io::stdout();
+    // let mut handle = stdout.lock();
+
+    // for result in rdr.records() {
+    //     let record = result?;
+    //     record_string.clear();
+    //     for (i, field) in record.iter().enumerate() {
+    //         if i > 0 {
+    //             record_string.push(b',');
+    //         }
+    //         record_string.extend_from_slice(field.as_bytes());
+    //     }
+    //     record_string.push(b'\n');
+    //     handle.write_all(&record_string)?;
+    // }
+
+    // Ok(())
+
+    // XXX: V5: .0645 seconds
+    // let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
+
+    // // Print headers
+    // let stdout = io::stdout();
+    // let mut handle = stdout.lock();
+    // writeln!(handle, "{}", headers.join(","))?;
+
+    // // Process and print each record
+    // let mut record_string = Vec::with_capacity(1024); // Pre-allocate a buffer
+    // for result in rdr.records() {
+    //     let record = result?;
+    //     record_string.clear();
+    //     for (i, field) in record.iter().enumerate() {
+    //         if i > 0 {
+    //             record_string.push(b',');
+    //         }
+    //         record_string.extend_from_slice(field.as_bytes());
+    //     }
+    //     record_string.push(b'\n');
+    //     handle.write_all(&record_string)?;
+    // }
+
+    // Ok(())
+
+    // XXX: V6: .0515 seconds
+    // Read the CSV file and get headers
+    let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
+
+    // Print headers
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+    writeln!(handle, "{}", headers.join(","))?;
+
+    // Process and print each record
+    let mut record_string = Vec::with_capacity(1024); // Pre-allocate a buffer
+    let mut output_buffer = Vec::with_capacity(8192); // Buffer for batching writes
+
+    for result in rdr.records() {
+        let record = result?;
+        record_string.clear();
+        for (i, field) in record.iter().enumerate() {
+            if i > 0 {
+                record_string.push(b',');
+            }
+            record_string.extend_from_slice(field.as_bytes());
+        }
+        record_string.push(b'\n');
+        output_buffer.extend_from_slice(&record_string);
+
+        // Flush the buffer if it gets too large
+        if output_buffer.len() > 8192 {
+            handle.write_all(&output_buffer)?;
+            output_buffer.clear();
+        }
+    }
+
+    // Write any remaining data in the buffer
+    if !output_buffer.is_empty() {
+        handle.write_all(&output_buffer)?;
+    }
+
     Ok(())
 }
 
