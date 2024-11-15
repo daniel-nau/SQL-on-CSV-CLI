@@ -47,7 +47,8 @@ use regex::Regex;
 use std::error::Error;
 // use std::process::Command;
 use std::fs::File;
-use std::io::{self, BufReader, BufWriter, Read, Write};
+use std::io::{self, BufReader, BufWriter, BufRead, Read, Write};
+// use std::io::{self, BufReader, BufRead, Write};
 use memmap2::Mmap;
 
 mod csv_reader;  // Import the csv_reader module for reading CSV files
@@ -96,17 +97,133 @@ fn is_aggregate_function(column: &str) -> bool {
 
 // Special function to handle "SELECT COUNT(*) FROM <file>" using wc -l for efficiency
 fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
-    // Read the CSV file and get headers
-    let (_, mut rdr) = csv_reader::read_csv(file_path)?;
+    // XXX V1 .0082 seconds
+    // // Use `wc -l` to get the line count
+    // let output = Command::new("wc")
+    // .arg("-l")
+    // .arg(file_path)
+    // .output()?;
+    
+    // // Parse the output to get the line count as a number
+    // let count_str = String::from_utf8_lossy(&output.stdout);
+    // let line_count: usize = count_str.split_whitespace().next().unwrap().parse()?;
+    
+    // // Subtract one to exclude the header row
+    // Ok(line_count - 1)
 
-    let mut count = 0;
-    // Process records and count those that meet the condition
-    for result in rdr.records() {
-        result?;
-        count += 1;
+    // XXX V2 .0490 seconds
+    // // Read the CSV file and get headers
+    // let (_, mut rdr) = csv_reader::read_csv(file_path)?;
+
+    // let mut count = 0;
+    // // Process records and count those that meet the condition
+    // for result in rdr.records() {
+    //     result?;
+    //     count += 1;
+    // }
+
+    // Ok(count)
+
+    // XXX V3 .0131 seconds
+    // let file = File::open(file_path)?;
+    // let reader = BufReader::with_capacity(65536, file); // 64 KB buffer for efficiency
+    
+    // // Count lines by iterating through the reader
+    // let line_count = reader.lines().count();
+
+    // Ok(line_count)
+
+    // XXX V4 .0142 seconds
+    // Open the file safely
+    let file = File::open(file_path)?;
+    
+    // Memory-map the file safely by using a helper function
+    let mmap = map_file(&file)?;
+
+    // Count the number of newline characters
+    let line_count = mmap.iter().filter(|&&b| b == b'\n').count();
+
+    Ok(line_count)
+
+    // XXX V5 .0142 seconds
+    // // Open the file
+    // let file = File::open(file_path)?;
+    
+    // // Memory-map the file safely
+    // let mmap = map_file(&file)?;
+
+    // // Count the number of newlines with a manual loop for better performance
+    // let mut line_count = 0;
+    // let len = mmap.len();
+    
+    // // Iterate through the memory-mapped data directly to count newlines
+    // for i in 0..len {
+    //     if mmap[i] == b'\n' {
+    //         line_count += 1;
+    //     }
+    // }
+
+    // Ok(line_count)
+
+    // XXX V6 .0147 seconds
+    // // Open the file
+    // let file = File::open(file_path)?;
+
+    // // Create a buffered reader with a large buffer (e.g., 1MB buffer)
+    // let reader = BufReader::with_capacity(1 << 20, file); // 1 MB buffer
+
+    // // Count the lines by iterating through the buffer and counting newlines
+    // let line_count = reader.lines().filter(|line| line.is_ok()).count();
+
+    // Ok(line_count)
+
+    // XXX V7 .0209 seconds
+    // let mut file = File::open(file_path)?;
+
+    // let mut line_count = 0;
+    // let mut buffer = [0u8; 8192]; // 8 KB buffer for direct reads
+
+    // // Read the file in chunks
+    // loop {
+    //     let bytes_read = file.read(&mut buffer)?;
+
+    //     if bytes_read == 0 {
+    //         break;
+    //     }
+
+    //     // Convert the buffer to a string slice and count newlines
+    //     if let Ok(slice) = std::str::from_utf8(&buffer[..bytes_read]) {
+    //         line_count += slice.chars().filter(|&c| c == '\n').count();
+    //     }
+    // }
+
+    // Ok(line_count)
+
+    // XXX V8 .0126 seconds
+    // // Open the file
+    // let file = File::open(file_path)?;
+
+    // // Create a buffered reader with a larger buffer (e.g., 64 KB buffer)
+    // let reader = BufReader::with_capacity(64 * 1024, file); // 64 KB buffer
+
+    // // Count the lines by iterating through the buffer and counting newlines
+    // let line_count = reader.lines().filter(|line| line.is_ok()).count();
+
+    // Ok(line_count) 
+}
+
+// Helper function to map a file safely
+fn map_file(file: &File) -> io::Result<Mmap> {
+    // Safety: ensure that the file is valid and we can safely map it
+    let metadata = file.metadata()?;
+    if metadata.len() == 0 {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "File is empty"));
     }
 
-    Ok(count)
+    // Memory map the file (unsafe, but validated)
+    unsafe {
+        Mmap::map(file).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+    }
 }
 
 // Function to count rows based on a condition ("SELECT COUNT() WHERE <condition>")
@@ -307,20 +424,9 @@ fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
     // XXX V9 0.0022 seconds (15.3x faster than V1)
     // Open the file in read-only mode
     let file = File::open(file_path)?;
-    let metadata = file.metadata()?;
-
-    // Ensure the file is not too large for memory mapping
-    if metadata.len() == 0 {
-        return Err(Box::new(io::Error::new(io::ErrorKind::InvalidData, "File is empty")));
-    }
-
-    // Memory-map the file in a safe manner
-    let mmap = unsafe { Mmap::map(&file)? };
-
-    // Ensure the file is readable and not being modified concurrently
-    if !metadata.is_file() {
-        return Err(Box::new(io::Error::new(io::ErrorKind::InvalidInput, "Input is not a regular file")));
-    }
+    
+    // Memory-map the file safely by using a helper function
+    let mmap = map_file(&file)?;
 
     // Write the memory-mapped data directly to stdout
     let stdout = io::stdout();
