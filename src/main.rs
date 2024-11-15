@@ -11,7 +11,6 @@
     - IN REPORT AND SLIDES, SHOW THAT TIME IS "REAL" TIME
     - Do smaller files to make sure the output is the same
     - Add support for SELECT * with conditions
-    - Do something different than wc -l and cat for COUNT(*) and SELECT * respectively
     - Look into making ReaderBuilder more efficient
     - Use float32 instead of float64?
     - Make it to be able to have a path with a ../ or ./ at the beginning and _ in file name like original Chicago crime data name
@@ -66,7 +65,7 @@ struct ParsedCommand {
 fn parse_query(query: &str) -> Result<ParsedCommand, String> {
     // Regular expression to match SELECT queries with an optional WHERE clause
     let re = Regex::new(
-        r"(?i)SELECT\s+(?P<columns>.+?)\s+FROM\s+(?P<data_file>[\w/]+\.csv)(?:\s+WHERE\s+(?P<condition>.+))?"
+        r"(?i)SELECT\s+(?P<columns>.+?)\s+FROM\s+(?P<data_file>(?:[.\./]+)?[\w/._-]+\.csv)(?:\s+WHERE\s+(?P<condition>.+))?"
     ).unwrap();
 
     if let Some(caps) = re.captures(query) {
