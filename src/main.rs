@@ -143,7 +143,7 @@ fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
     // Count the number of newline characters
     let line_count = mmap.iter().filter(|&&b| b == b'\n').count();
 
-    Ok(line_count)
+    Ok(line_count - 1)
 
     // XXX V5 .0142 seconds
     // // Open the file
@@ -509,9 +509,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         Ok(mut command) => {
             // Special case for "SELECT COUNT(*) FROM <file>"
             if command.columns.len() == 1 && command.columns[0] == "COUNT(*)" {
-                // Handle count with or without a condition
                 if command.condition.is_none() {
-                    // Use the optimized line counting function
+                    // Use the optimized count_star function to count lines
                     match count_star(&command.data_file) {
                         Ok(count) => {
                             println!("COUNT(*): {}", count);
