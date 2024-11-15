@@ -4,8 +4,10 @@
     - #2. Do benchmarking (increase # of runs for mine and DuckDB)
     - #3. Generate flamegraphs for profiling and keep tracks of what I did to optimize for my report (different versions/executable names?)
     - #4. Do improvements and optimizations (UPDATE CARGO.TOML VERSION AND DO cargo pkgid TO SEE VERSIONS)
+    - WORK ON READER! (SEE IF I CAN USE BufReader)
     - Double check outputs (COUNT(*) and general format)
     - Remove spaces after commas in output
+    - https://users.rust-lang.org/t/how-can-i-input-and-output-contents-fastest-in-output-stream-in-a-oj-system/61054/2
     - IN REPORT AND SLIDES, SHOW THAT TIME IS "REAL" TIME
     - Do smaller files to make sure the output is the same
     - Add support for SELECT * with conditions
@@ -44,8 +46,9 @@ use std::env;
 use regex::Regex;
 use std::error::Error;
 // use std::process::Command;
-use std::io::{self, Write};
-
+use std::fs::File;
+use std::io::{self, BufReader, BufWriter, Read, Write};
+use memmap2::Mmap;
 
 mod csv_reader;  // Import the csv_reader module for reading CSV files
 mod aggregates;  // Import the aggregates module for aggregate functions
@@ -223,42 +226,107 @@ fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
 
     // Ok(())
 
-    // XXX: V6: .0515 seconds
-    // Read the CSV file and get headers
-    let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
+    // XXX: V6: .0500 seconds
+    // // Read the CSV file and get headers
+    // let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
 
-    // Print headers
+    // // Print headers
+    // let stdout = io::stdout();
+    // let mut handle = stdout.lock();
+    // writeln!(handle, "{}", headers.join(","))?;
+
+    // // Process and print each record
+    // let mut record_string = Vec::with_capacity(1024); // Pre-allocate a buffer
+    // let mut output_buffer = Vec::with_capacity(8192); // Buffer for batching writes
+
+    // for result in rdr.records() {
+    //     let record = result?;
+    //     record_string.clear();
+    //     for (i, field) in record.iter().enumerate() {
+    //         if i > 0 {
+    //             record_string.push(b',');
+    //         }
+    //         record_string.extend_from_slice(field.as_bytes());
+    //     }
+    //     record_string.push(b'\n');
+    //     output_buffer.extend_from_slice(&record_string);
+
+    //     // Flush the buffer if it gets too large
+    //     if output_buffer.len() > 8192 {
+    //         handle.write_all(&output_buffer)?;
+    //         output_buffer.clear();
+    //     }
+    // }
+
+    // // Write any remaining data in the buffer
+    // if !output_buffer.is_empty() {
+    //     handle.write_all(&output_buffer)?;
+    // }
+
+    // Ok(())
+
+    // XXX V7 0.0052 seconds (6.5x faster than V1)
+    // // Open the file and wrap it in a buffered reader
+    // let file = File::open(file_path)?;
+    // let mut reader = BufReader::with_capacity(65536, file); // Large buffer for reading
+
+    // // Wrap stdout in a buffered writer
+    // let stdout = io::stdout();
+    // let mut writer = BufWriter::with_capacity(65536, stdout.lock()); // Large buffer for writing
+
+    // // Buffer for chunks of the file
+    // let mut buffer = vec![0; 65536];
+
+    // // Read and write chunks
+    // loop {
+    //     let bytes_read = reader.read(&mut buffer)?;
+    //     if bytes_read == 0 {
+    //         break; // EOF
+    //     }
+    //     writer.write_all(&buffer[..bytes_read])?;
+    // }
+
+    // writer.flush()?; // Ensure everything is written
+    // Ok(())
+
+    // XXX V8 0.0023 seconds (14.6x faster than V1)
+    // // Open the file
+    // let file = File::open(file_path)?;
+        
+    // // Memory-map the file
+    // let mmap = unsafe { Mmap::map(&file)? };
+
+    // // Write directly to stdout
+    // let stdout = io::stdout();
+    // let mut handle = stdout.lock();
+    // handle.write_all(&mmap)?;
+    // handle.flush()?; // Ensure all data is written out
+
+    // Ok(())
+
+    // XXX V9 0.0022 seconds (15.3x faster than V1)
+    // Open the file in read-only mode
+    let file = File::open(file_path)?;
+    let metadata = file.metadata()?;
+
+    // Ensure the file is not too large for memory mapping
+    if metadata.len() == 0 {
+        return Err(Box::new(io::Error::new(io::ErrorKind::InvalidData, "File is empty")));
+    }
+
+    // Memory-map the file in a safe manner
+    let mmap = unsafe { Mmap::map(&file)? };
+
+    // Ensure the file is readable and not being modified concurrently
+    if !metadata.is_file() {
+        return Err(Box::new(io::Error::new(io::ErrorKind::InvalidInput, "Input is not a regular file")));
+    }
+
+    // Write the memory-mapped data directly to stdout
     let stdout = io::stdout();
     let mut handle = stdout.lock();
-    writeln!(handle, "{}", headers.join(","))?;
-
-    // Process and print each record
-    let mut record_string = Vec::with_capacity(1024); // Pre-allocate a buffer
-    let mut output_buffer = Vec::with_capacity(8192); // Buffer for batching writes
-
-    for result in rdr.records() {
-        let record = result?;
-        record_string.clear();
-        for (i, field) in record.iter().enumerate() {
-            if i > 0 {
-                record_string.push(b',');
-            }
-            record_string.extend_from_slice(field.as_bytes());
-        }
-        record_string.push(b'\n');
-        output_buffer.extend_from_slice(&record_string);
-
-        // Flush the buffer if it gets too large
-        if output_buffer.len() > 8192 {
-            handle.write_all(&output_buffer)?;
-            output_buffer.clear();
-        }
-    }
-
-    // Write any remaining data in the buffer
-    if !output_buffer.is_empty() {
-        handle.write_all(&output_buffer)?;
-    }
+    handle.write_all(&mmap)?;
+    handle.flush()?; // Ensure all data is written out
 
     Ok(())
 }
