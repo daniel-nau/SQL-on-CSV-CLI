@@ -6,26 +6,21 @@
     - #4. Do improvements and optimizations (UPDATE CARGO.TOML VERSION AND DO cargo pkgid TO SEE VERSIONS)
     - WORK ON READER! (SEE IF I CAN USE BufReader)
     - Double check outputs (COUNT(*) and general format)
-    - Remove spaces after commas in output
     - https://users.rust-lang.org/t/how-can-i-input-and-output-contents-fastest-in-output-stream-in-a-oj-system/61054/2
     - IN REPORT AND SLIDES, SHOW THAT TIME IS "REAL" TIME
     - Do smaller files to make sure the output is the same
     - Add support for SELECT * with conditions
     - Look into making ReaderBuilder more efficient
     - Use float32 instead of float64?
-    - Make it to be able to have a path with a ../ or ./ at the beginning and _ in file name like original Chicago crime data name
-        - And spaces in strings of column names? (csv and query support) 
+    - And spaces in strings of column names? (csv and query support) 
     - Map aggregate function to column name (or vice versa) and then map to column index
     - Do more testing and double check to see which parts of the code are slow compared to csvsql
         - Max/Min/Avg/Sum kinda slow
-    - Use BufReader for COUNT(*) and SELECT *?
     - See if SELECT without WHERE still uses check_condition?
     - Jump to field we are comparing to with the WHERE clause (map column names to index?)
     - Add support for strings
-    - Print out like sql does or just print out like CSV?
     - Print out data at the end or as it's processed? Speed vs. memory?
     - Ensure robust error handling
-    - Add spaces after commas in the SELECT * case OR remove spaces from my output for consistency
     - Add types?
     - Refactor code into smaller, more modular functions and clean up code
     - Optimize and explore alternatives for better performance ()
@@ -38,7 +33,7 @@
     - Document the code and provide examples
     - Prepare for release and strip the binary ([profile.release] optimizations (opt-level))
     - Run thorough testing and benchmarking (add automated tests?)
-        - Find alternative CSV files to test with (chicagoCrimeData kills csvkit csvsql)
+        - Find alternative CSV files to test with
 */
 
 use std::env;
