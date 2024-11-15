@@ -1,11 +1,10 @@
 /*
     TODO:
     - #1. Testing to make sure the outputs are correct
-    - #2. Do benchmarking with different files (sizes and widths) and queries (install csvkit and DuckDB on isengard) and increase # of runs if fast enough
+    - #2. Do benchmarking (increase # of runs for mine and DuckDB)
     - #3. Generate flamegraphs for profiling and keep tracks of what I did to optimize for my report (different versions/executable names?)
     - #4. Do improvements and optimizations (UPDATE CARGO.TOML VERSION AND DO cargo pkgid TO SEE VERSIONS)
-    - TODO: COPY OVER BENCHMARKS SCRIPTS AND OUTPUTS FROM ISENGARD. CHANGES WERE MADE LOL
-    - Do test to see if duckdb is actually that slow
+    - Double check outputs (COUNT(*) and general format)
     - Remove spaces after commas in output
     - IN REPORT AND SLIDES, SHOW THAT TIME IS "REAL" TIME
     - Do smaller files to make sure the output is the same
@@ -33,6 +32,8 @@
         - Use references instead of cloning strings
         - Look into other stuff
         - Look into reader buffer size
+        - rustfmt and clippy: https://www.reddit.com/r/rust/comments/w25npu/how_does_rust_optimize_this_code_to_increase_the/
+        - Research other optimizations: https://users.rust-lang.org/t/can-anyone-share-tips-for-optimize-coding-in-rust/45406/2
     - Document the code and provide examples
     - Prepare for release and strip the binary ([profile.release] optimizations (opt-level))
     - Run thorough testing and benchmarking (add automated tests?)
@@ -230,14 +231,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
 
                 // Print the headers
-                println!("{}", headers.join(", "));
+                println!("{}", headers.join(","));
 
                 // Process and filter records
                 for result in rdr.records() {
                     let record = result?;
                     if check_condition(&command, &headers, &record) {
                         let row: Vec<&str> = record.iter().collect();
-                        println!("{}", row.join(", "));
+                        println!("{}", row.join(","));
                     }
                 }
             } else {
