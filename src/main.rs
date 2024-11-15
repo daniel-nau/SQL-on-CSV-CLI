@@ -90,19 +90,18 @@ fn is_aggregate_function(column: &str) -> bool {
 }
 
 // Special function to handle "SELECT COUNT(*) FROM <file>" using wc -l for efficiency
-fn count_lines_excluding_header(file_path: &str) -> Result<usize, Box<dyn Error>> {
-    // Use `wc -l` to get the line count
-    let output = Command::new("wc")
-        .arg("-l")
-        .arg(file_path)
-        .output()?;
-    
-    // Parse the output to get the line count as a number
-    let count_str = String::from_utf8_lossy(&output.stdout);
-    let line_count: usize = count_str.split_whitespace().next().unwrap().parse()?;
-    
-    // Subtract one to exclude the header row
-    Ok(line_count - 1)
+fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
+    // Read the CSV file and get headers
+    let (_, mut rdr) = csv_reader::read_csv(file_path)?;
+
+    let mut count = 0;
+    // Process records and count those that meet the condition
+    for result in rdr.records() {
+        result?;
+        count += 1;
+    }
+
+    Ok(count)
 }
 
 // Function to count rows based on a condition ("SELECT COUNT() WHERE <condition>")
@@ -209,9 +208,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Handle count with or without a condition
                 if command.condition.is_none() {
                     // Use the optimized line counting function
-                    match count_lines_excluding_header(&command.data_file) {
+                    match count_star(&command.data_file) {
                         Ok(count) => {
-                            println!("COUNT(*): {} (excluding header)", count);
+                            println!("COUNT(*): {}", count);
                         }
                         Err(e) => {
                             eprintln!("Error counting lines: {}", e);
