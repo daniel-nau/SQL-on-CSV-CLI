@@ -1,0 +1,9 @@
+sudo sh -c 'echo 0 > /proc/sys/kernel/perf_event_paranoid'
+
+./perf record -F 99 -a -g -- target/release/<executable> --query "SELECT <columns> FROM <file> WHERE <conditions>" && ./perf script | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl > <output_file>.svg
+
+./perf record -F 99 -a -g -- target/release/csvsql_v1 --query "SELECT MAX(col_1) FROM data/small_tall.csv" && ./perf script | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl > flamegraph.svg
+
+********* USE THIS *********
+./perf record -F 99 -g -- target/release/csvsql_v1 --query "SELECT MAX(col_1) FROM data/small_tall.csv" && ./perf script | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl > flamegraph.svg
+./perf record -F 99 -g -- target/release/csvsql_v1 --query "SELECT col_1 FROM data/small_tall.csv" && ./perf script | ./FlameGraph/stackcollapse-perf.pl | ./FlameGraph/flamegraph.pl > v1_select_col1.svg
