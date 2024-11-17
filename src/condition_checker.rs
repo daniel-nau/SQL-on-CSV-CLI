@@ -13,22 +13,17 @@ pub fn check_condition(
         for or_clause in or_clauses {
             let and_clauses: Vec<&str> = or_clause.split("AND").map(|s| s.trim()).collect();
 
-            let mut and_result = true;
-            for and_clause in and_clauses {
-                if !evaluate_condition(and_clause, headers, record) {
-                    and_result = false;
-                    break;
-                }
-            }
-
-            if and_result {
-                return true;
+            // Evaluate all AND conditions within the OR clause
+            if and_clauses
+                .iter()
+                .all(|&and_clause| evaluate_condition(and_clause, headers, record))
+            {
+                return true; // If all AND conditions are true, the OR clause is true
             }
         }
-        false
-    } else {
-        true
+        return false;
     }
+    true
 }
 
 // Helper function to evaluate a single condition
@@ -43,8 +38,10 @@ pub fn evaluate_condition(condition: &str, headers: &[String], record: &[&str]) 
             let field_value: f64 = record
                 .get(column_index)
                 .unwrap_or(&"")
+                .trim()
                 .parse()
                 .unwrap_or(f64::NAN);
+
             return match operator {
                 "<" => field_value < value,
                 ">" => field_value > value,
