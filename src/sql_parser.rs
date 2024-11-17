@@ -17,7 +17,8 @@ pub fn parse_query(query: &str) -> Result<ParsedCommand, String> {
 
     if let Some(caps) = re.captures(query) {
         // Split the selected columns by comma and trim whitespace
-        let columns = caps["columns"].split(',')
+        let columns = caps["columns"]
+            .split(',')
             .map(|col| col.trim().to_string())
             .collect();
 
@@ -25,7 +26,11 @@ pub fn parse_query(query: &str) -> Result<ParsedCommand, String> {
         let data_file = caps["data_file"].to_string();
         let condition = caps.name("condition").map(|m| m.as_str().to_string());
 
-        Ok(ParsedCommand { columns, data_file, condition })
+        Ok(ParsedCommand {
+            columns,
+            data_file,
+            condition,
+        })
     } else {
         Err("Invalid SQL Query format".to_string())
     }
@@ -34,9 +39,9 @@ pub fn parse_query(query: &str) -> Result<ParsedCommand, String> {
 // Helper function to check if a column specifies an aggregate function
 pub fn is_aggregate_function(column: &str) -> bool {
     column == "COUNT(*)"
-    || column.starts_with("SUM(") 
-    || column.starts_with("AVG(") 
-    || column.starts_with("MIN(") 
-    || column.starts_with("MAX(") 
-    || column.starts_with("COUNT(")
+        || column.starts_with("SUM(")
+        || column.starts_with("AVG(")
+        || column.starts_with("MIN(")
+        || column.starts_with("MAX(")
+        || column.starts_with("COUNT(")
 }

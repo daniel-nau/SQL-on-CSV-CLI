@@ -1,7 +1,11 @@
 use crate::sql_parser;
 
 // Modified helper function to evaluate compound WHERE clause with AND/OR
-pub fn check_condition(command: &sql_parser::ParsedCommand, headers: &[String], record: &csv::StringRecord) -> bool {
+pub fn check_condition(
+    command: &sql_parser::ParsedCommand,
+    headers: &[String],
+    record: &csv::StringRecord,
+) -> bool {
     if let Some(cond) = &command.condition {
         // Split conditions on OR, then split each OR clause on AND
         let or_clauses: Vec<&str> = cond.split("OR").map(|s| s.trim()).collect();
@@ -36,7 +40,11 @@ pub fn evaluate_condition(condition: &str, headers: &[String], record: &csv::Str
         let value: f64 = parts[2].parse().unwrap_or(f64::NAN);
 
         if let Some(column_index) = headers.iter().position(|h| h == column_name) {
-            let field_value: f64 = record.get(column_index).unwrap_or("").parse().unwrap_or(f64::NAN);
+            let field_value: f64 = record
+                .get(column_index)
+                .unwrap_or("")
+                .parse()
+                .unwrap_or(f64::NAN);
             return match operator {
                 "<" => field_value < value,
                 ">" => field_value > value,

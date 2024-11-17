@@ -35,7 +35,10 @@ pub struct Avg {
 
 impl Avg {
     pub fn new() -> Self {
-        Avg { total: 0.0, count: 0 }
+        Avg {
+            total: 0.0,
+            count: 0,
+        }
     }
 }
 
@@ -62,7 +65,10 @@ pub struct Min {
 
 impl Min {
     pub fn new() -> Self {
-        Min { min_value: f64::INFINITY, initialized: false }
+        Min {
+            min_value: f64::INFINITY,
+            initialized: false,
+        }
     }
 }
 
@@ -91,7 +97,10 @@ pub struct Max {
 
 impl Max {
     pub fn new() -> Self {
-        Max { max_value: f64::NEG_INFINITY, initialized: false }
+        Max {
+            max_value: f64::NEG_INFINITY,
+            initialized: false,
+        }
     }
 }
 

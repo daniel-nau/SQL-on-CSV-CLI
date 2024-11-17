@@ -7,7 +7,7 @@ use memmap2::Mmap;
 use std::io::{self};
 
 // Helper function to map a file safely
-pub fn map_file(file_path: &str) ->  io::Result<Mmap> {
+pub fn map_file(file_path: &str) -> io::Result<Mmap> {
     let file = File::open(file_path)?;
 
     // Safety: ensure that the file is valid and we can safely map it
@@ -17,9 +17,7 @@ pub fn map_file(file_path: &str) ->  io::Result<Mmap> {
     }
 
     // Memory map the file (unsafe, but validated)
-    unsafe {
-        Mmap::map(&file).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-    }
+    unsafe { Mmap::map(&file).map_err(|e| io::Error::new(io::ErrorKind::Other, e)) }
 }
 
 // struct CsvReaderWithMmap {
@@ -47,7 +45,11 @@ pub fn read_csv(file_path: &str) -> Result<(Vec<String>, csv::Reader<File>), Box
         .from_reader(file);
 
     // Get the headers (first row) to know column names
-    let headers = rdr.headers()?.iter().map(|s| s.to_string()).collect::<Vec<String>>();
+    let headers = rdr
+        .headers()?
+        .iter()
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>();
 
     Ok((headers, rdr))
 
@@ -61,7 +63,6 @@ pub fn read_csv(file_path: &str) -> Result<(Vec<String>, csv::Reader<File>), Box
     // // Create a buffered reader from the memory-mapped data
     // // let buf_reader = BufReader::new(io::Cursor::new(&mmap));
     // let buf_reader = BufReader::new(io::Cursor::new(mmap.to_vec()));  // Copy the data into a Vec<u8> to own it
-
 
     // // Create the CSV reader from the buffered reader
     // let mut rdr = ReaderBuilder::new()

@@ -12,7 +12,7 @@
     - Add support for SELECT * with conditions
     - Look into making ReaderBuilder more efficient
     - Use float32 instead of float64?
-    - And spaces in strings of column names? (csv and query support) 
+    - And spaces in strings of column names? (csv and query support)
     - Map aggregate function to column name (or vice versa) and then map to column index
     - Do more testing and double check to see which parts of the code are slow compared to csvsql
         - Max/Min/Avg/Sum kinda slow
@@ -29,6 +29,7 @@
         - Look into other stuff
         - Look into reader buffer size
         - rustfmt and clippy: https://www.reddit.com/r/rust/comments/w25npu/how_does_rust_optimize_this_code_to_increase_the/
+            - cargo fmt and cargo clippy
         - Research other optimizations: https://users.rust-lang.org/t/can-anyone-share-tips-for-optimize-coding-in-rust/45406/2
     - Document the code and provide examples
     - Prepare for release and strip the binary ([profile.release] optimizations (opt-level))
@@ -44,7 +45,7 @@ use std::io::{self, Write};
 // Modules for handling specific functionalities
 mod aggregates;
 mod condition_checker;
-mod csv_reader; 
+mod csv_reader;
 mod sql_parser;
 
 /// Main entry point for the program.
@@ -67,7 +68,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Parse the SQL query
     match sql_parser::parse_query(sql_query) {
         Ok(mut command) => {
-            match (command.columns.len(), command.columns.get(0), &command.condition) {
+            match (
+                command.columns.len(),
+                command.columns.get(0),
+                &command.condition,
+            ) {
                 // Handle "SELECT COUNT(*) FROM <file> WHERE <condition>"
                 (1, Some(col), Some(condition)) if col == "COUNT(*)" => {
                     let count = count_with_condition(&command.data_file, condition)?;
@@ -98,7 +103,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 /// Counts the number of rows in the CSV file (excluding the header row).
-fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {  
+fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
     let mmap = csv_reader::map_file(&file_path)?; // Memory-map the file
     let line_count = mmap.iter().filter(|&&b| b == b'\n').count(); // Count newline characters
     Ok(line_count - 1) // Exclude the header
@@ -125,7 +130,7 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
 }
 
 /// Outputs the entire CSV file content to `stdout`.
-fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {    
+fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
     let mmap = csv_reader::map_file(&file_path)?; // Memory-map the file
     let stdout = io::stdout();
     let mut handle = stdout.lock();
@@ -135,7 +140,9 @@ fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
 }
 
 /// Handles queries like "SELECT * FROM <file> WHERE <condition>".
-fn handle_select_star_with_condition(command: &sql_parser::ParsedCommand) -> Result<(), Box<dyn Error>> {
+fn handle_select_star_with_condition(
+    command: &sql_parser::ParsedCommand,
+) -> Result<(), Box<dyn Error>> {
     let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
     println!("{}", headers.join(",")); // Print headers
 
@@ -154,18 +161,25 @@ fn handle_select_star_with_condition(command: &sql_parser::ParsedCommand) -> Res
 /// Handles more complex queries with aggregate functions or column selections.
 fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), Box<dyn Error>> {
     let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
-    let is_aggregate_query = command.columns.iter().any(|col| sql_parser::is_aggregate_function(col.as_str()));
+    let is_aggregate_query = command
+        .columns
+        .iter()
+        .any(|col| sql_parser::is_aggregate_function(col.as_str()));
 
     // Special case: Change "COUNT(*)" to "COUNT(<first_column>)"
     if command.columns.contains(&"COUNT(*)".to_string()) {
         let first_column = headers.get(0).unwrap_or(&String::new()).clone();
-        command.columns = command.columns.iter().map(|col| {
-            if col == "COUNT(*)" {
-                format!("COUNT({})", first_column)
-            } else {
-                col.clone()
-            }
-        }).collect();
+        command.columns = command
+            .columns
+            .iter()
+            .map(|col| {
+                if col == "COUNT(*)" {
+                    format!("COUNT({})", first_column)
+                } else {
+                    col.clone()
+                }
+            })
+            .collect();
     }
 
     if is_aggregate_query {
@@ -178,7 +192,11 @@ fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), B
 }
 
 /// Handles queries with aggregate functions (e.g., SUM, AVG, MIN).
-fn handle_aggregate_query(command: &sql_parser::ParsedCommand, headers: &[String], rdr: &mut csv::Reader<File>) -> Result<(), Box<dyn Error>> {
+fn handle_aggregate_query(
+    command: &sql_parser::ParsedCommand,
+    headers: &[String],
+    rdr: &mut csv::Reader<File>,
+) -> Result<(), Box<dyn Error>> {
     let mut aggregates = aggregates::Aggregates::new();
 
     // Register aggregate functions
@@ -222,7 +240,9 @@ fn handle_aggregate_query(command: &sql_parser::ParsedCommand, headers: &[String
         } else {
             column.clone()
         };
-        let value = results.get(column).map_or("NaN".to_string(), |v| v.to_string());
+        let value = results
+            .get(column)
+            .map_or("NaN".to_string(), |v| v.to_string());
         println!("{}: {}", label, value);
     }
 
@@ -230,8 +250,14 @@ fn handle_aggregate_query(command: &sql_parser::ParsedCommand, headers: &[String
 }
 
 /// Handles column selection queries (e.g., "SELECT col1, col2").
-fn handle_column_selection_query(command: &sql_parser::ParsedCommand, headers: &[String], rdr: &mut csv::Reader<File>) -> Result<(), Box<dyn Error>> {
-    let column_indexes: Vec<_> = command.columns.iter()
+fn handle_column_selection_query(
+    command: &sql_parser::ParsedCommand,
+    headers: &[String],
+    rdr: &mut csv::Reader<File>,
+) -> Result<(), Box<dyn Error>> {
+    let column_indexes: Vec<_> = command
+        .columns
+        .iter()
         .filter_map(|col| headers.iter().position(|h| h == col))
         .collect();
 
@@ -240,8 +266,11 @@ fn handle_column_selection_query(command: &sql_parser::ParsedCommand, headers: &
     // Process records, optionally filtering based on the condition
     for result in rdr.records() {
         let record = result?;
-        if command.condition.is_none() || condition_checker::check_condition(command, headers, &record) {
-            let selected_fields: Vec<&str> = column_indexes.iter()
+        if command.condition.is_none()
+            || condition_checker::check_condition(command, headers, &record)
+        {
+            let selected_fields: Vec<&str> = column_indexes
+                .iter()
                 .map(|&index| record.get(index).unwrap_or(""))
                 .collect();
             println!("{}", selected_fields.join(","));
