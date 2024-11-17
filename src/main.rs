@@ -70,7 +70,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         Ok(mut command) => {
             match (
                 command.columns.len(),
-                command.columns.get(0),
+                command.columns.first(),
                 &command.condition,
             ) {
                 // Handle "SELECT COUNT(*) FROM <file> WHERE <condition>"
@@ -104,7 +104,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 /// Counts the number of rows in the CSV file (excluding the header row).
 fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
-    let mmap = csv_reader::map_file(&file_path)?; // Memory-map the file
+    let mmap = csv_reader::map_file(file_path)?; // Memory-map the file
     let line_count = mmap.iter().filter(|&&b| b == b'\n').count(); // Count newline characters
     Ok(line_count - 1) // Exclude the header
 }
@@ -131,7 +131,7 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
 
 /// Outputs the entire CSV file content to `stdout`.
 fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
-    let mmap = csv_reader::map_file(&file_path)?; // Memory-map the file
+    let mmap = csv_reader::map_file(file_path)?; // Memory-map the file
     let stdout = io::stdout();
     let mut handle = stdout.lock();
     handle.write_all(&mmap)?; // Write directly to `stdout`
@@ -168,7 +168,7 @@ fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), B
 
     // Special case: Change "COUNT(*)" to "COUNT(<first_column>)"
     if command.columns.contains(&"COUNT(*)".to_string()) {
-        let first_column = headers.get(0).unwrap_or(&String::new()).clone();
+        let first_column = headers.first().unwrap_or(&String::new()).clone();
         command.columns = command
             .columns
             .iter()
