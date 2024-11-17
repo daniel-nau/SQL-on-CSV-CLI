@@ -89,11 +89,8 @@ fn is_aggregate_function(column: &str) -> bool {
 }
 
 fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {  
-    // Open the file safely
-    let file = File::open(file_path)?;
-    
     // Memory-map the file safely by using a helper function
-    let mmap = csv_reader::map_file(&file)?;
+    let mmap = csv_reader::map_file(&file_path)?;
 
     // Count the number of newline characters
     let line_count = mmap.iter().filter(|&&b| b == b'\n').count();
@@ -119,12 +116,9 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
     Ok(count)
 }
 
-fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
-    // Open the file in read-only mode
-    let file = File::open(file_path)?;
-    
+fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {    
     // Memory-map the file safely by using a helper function
-    let mmap = csv_reader::map_file(&file)?;
+    let mmap = csv_reader::map_file(&file_path)?;
 
     // Write the memory-mapped data directly to stdout
     let stdout = io::stdout();

@@ -5,7 +5,9 @@ use memmap2::Mmap;
 use std::io::{self, Cursor};
 
 // Helper function to map a file safely
-pub fn map_file(file: &File) -> io::Result<Mmap> {
+pub fn map_file(file_path: &str) ->  io::Result<Mmap> {
+    let file = File::open(file_path)?;
+
     // Safety: ensure that the file is valid and we can safely map it
     let metadata = file.metadata()?;
     if metadata.len() == 0 {
@@ -14,7 +16,7 @@ pub fn map_file(file: &File) -> io::Result<Mmap> {
 
     // Memory map the file (unsafe, but validated)
     unsafe {
-        Mmap::map(file).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+        Mmap::map(&file).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
     }
 }
 
