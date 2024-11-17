@@ -102,14 +102,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn get_headers(
-    line_iter: &mut impl Iterator<Item = io::Result<String>>,
+fn get_headers<'a>(
+    line_iter: &mut impl Iterator<Item = io::Result<&'a [u8]>>,
 ) -> Result<Vec<String>, Box<dyn Error>> {
     if let Some(Ok(header_line)) = line_iter.next() {
         // Split the header line into individual column names and collect into a Vec<String>
         Ok(header_line
-            .split(',')
-            .map(|s| s.trim().to_string())
+            .split(|&b| b == b',')
+            .map(|s| String::from_utf8_lossy(s).trim().to_string())
             .collect::<Vec<String>>())
     } else {
         // Return an error if the headers cannot be read
@@ -135,7 +135,10 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
     // Process and count records matching the condition
     for result in line_iter {
         let record = result?;
-        let record: Vec<&str> = record.split(',').collect();
+        let record: Vec<&str> = record
+            .split(|&b| b == b',')
+            .map(|s| std::str::from_utf8(s).unwrap())
+            .collect();
         let parsed_command = sql_parser::ParsedCommand {
             columns: vec![],
             data_file: file_path.to_string(),
@@ -175,7 +178,10 @@ fn handle_select_star_with_condition(
         let record = result?;
 
         // Split the line into individual fields
-        let record: Vec<&str> = record.split(',').collect();
+        let record: Vec<&str> = record
+            .split(|&b| b == b',')
+            .map(|s| std::str::from_utf8(s).unwrap())
+            .collect();
 
         // Check if the record matches the condition specified in the command
         if condition_checker::check_condition(command, &headers, &record) {
@@ -248,7 +254,10 @@ fn handle_aggregate_query(
     // Apply aggregates to matching records
     for result in line_iter {
         let record = result?;
-        let record: Vec<&str> = record.split(',').collect();
+        let record: Vec<&str> = record
+            .split(|&b| b == b',')
+            .map(|s| std::str::from_utf8(s).unwrap())
+            .collect();
         if condition_checker::check_condition(command, &headers, &record) {
             for (i, field) in record.iter().enumerate() {
                 if let Ok(value) = field.parse::<f64>() {
@@ -304,7 +313,10 @@ fn handle_column_selection_query(
         // There is a condition
         for result in line_iter {
             let record = result?;
-            let record: Vec<&str> = record.split(',').collect();
+            let record: Vec<&str> = record
+                .split(|&b| b == b',')
+                .map(|s| std::str::from_utf8(s).unwrap())
+                .collect();
             if condition_checker::check_condition(command, &headers, &record) {
                 // Select the fields based on the column indexes
                 let selected_fields: Vec<&str> = column_indexes
@@ -319,7 +331,10 @@ fn handle_column_selection_query(
         // There is no condition
         for result in line_iter {
             let record = result?;
-            let record: Vec<&str> = record.split(',').collect();
+            let record: Vec<&str> = record
+                .split(|&b| b == b',')
+                .map(|s| std::str::from_utf8(s).unwrap())
+                .collect();
             // Select the fields based on the column indexes
             let selected_fields: Vec<&str> = column_indexes
                 .iter()
