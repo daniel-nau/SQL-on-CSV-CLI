@@ -328,21 +328,39 @@ fn handle_column_selection_query(
             }
         }
     } else {
-        // There is no condition
+        // Prepare the buffered writer for faster output
+        let stdout = std::io::stdout();
+        let mut writer = std::io::BufWriter::new(stdout.lock());
+
+        // Preallocate a buffer to avoid reallocations
+        let mut selected_fields_buffer = Vec::new();
+
         for result in line_iter {
             let record = result?;
-            let record: Vec<&str> = record
-                .split(|&b| b == b',')
-                .map(|s| std::str::from_utf8(s).unwrap())
-                .collect();
+
+            // Split the line into fields (without creating unnecessary allocations)
+            let fields: Vec<&[u8]> = record.split(|&b| b == b',').collect();
+
             // Select the fields based on the column indexes
-            let selected_fields: Vec<&str> = column_indexes
+            for &index in &column_indexes {
+                selected_fields_buffer.push(fields[index]);
+            }
+
+            // Join selected fields into a CSV line (using byte slices directly)
+            let csv_line = selected_fields_buffer
                 .iter()
-                .map(|&index| record.get(index).copied().unwrap_or(""))
-                .collect();
-            // Print the selected fields
-            println!("{}", selected_fields.join(","));
+                .map(|&field| String::from_utf8_lossy(field)) // Convert byte slice to UTF-8
+                .collect::<Vec<_>>()
+                .join(","); // Join the fields with commas
+
+            // Write the joined line followed by a newline
+            writeln!(writer, "{}", csv_line)?;
+
+            // Clear the buffer for the next line
+            selected_fields_buffer.clear();
         }
+
+        writer.flush()?; // Ensure all output is written to stdout
     }
 
     Ok(())
