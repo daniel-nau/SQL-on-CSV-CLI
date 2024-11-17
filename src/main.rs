@@ -6,6 +6,7 @@
     - #4. Do improvements and optimizations (UPDATE CARGO.TOML VERSION AND DO cargo pkgid TO SEE VERSIONS)
     - WORK ON READER! (SEE IF I CAN USE BufReader)
     - Fix WHERE with OR
+    - Put all of the file processing in a separate file
     - Double check outputs (COUNT(*) and general format)
     - https://users.rust-lang.org/t/how-can-i-input-and-output-contents-fastest-in-output-stream-in-a-oj-system/61054/2
     - IN REPORT AND SLIDES, SHOW THAT TIME IS "REAL" TIME
@@ -28,7 +29,6 @@
         - Consider avoiding Vecs where possible
         - Use references instead of cloning strings
         - Look into other stuff
-        - Look into reader buffer size
         - rustfmt and clippy: https://www.reddit.com/r/rust/comments/w25npu/how_does_rust_optimize_this_code_to_increase_the/
             - cargo fmt and cargo clippy
         - Research other optimizations: https://users.rust-lang.org/t/can-anyone-share-tips-for-optimize-coding-in-rust/45406/2
@@ -167,7 +167,7 @@ fn handle_select_star_with_condition(
     let mut line_iter = csv_reader.lines();
 
     let headers = get_headers(&mut line_iter)?;
-    print!("{:?}", headers);
+    println!("{}", headers.join(","));
 
     // Process each record (line) in the CSV file
     for result in line_iter {
@@ -288,7 +288,9 @@ fn handle_column_selection_query(
 ) -> Result<(), Box<dyn Error>> {
     let mut line_iter = csv_reader.lines();
     let headers = get_headers(&mut line_iter)?;
-    print!("{:?}", headers);
+
+    // Print the selected columns as the header
+    println!("{}", command.columns.join(","));
 
     // Map column names to their indexes
     let column_indexes: Vec<_> = command
