@@ -102,6 +102,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn get_headers(
+    line_iter: &mut impl Iterator<Item = io::Result<String>>,
+) -> Result<Vec<String>, Box<dyn Error>> {
+    if let Some(Ok(header_line)) = line_iter.next() {
+        // Split the header line into individual column names and collect into a Vec<String>
+        Ok(header_line
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect::<Vec<String>>())
+    } else {
+        // Return an error if the headers cannot be read
+        Err("Failed to read headers".into())
+    }
+}
+
 /// Counts the number of rows in the CSV file (excluding the header row).
 fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
     let mmap = csv_reader::map_file(file_path)?; // Memory-map the file
@@ -112,22 +127,13 @@ fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
 /// Counts rows in the CSV file that satisfy a given condition.
 fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<dyn Error>> {
     let csv_reader = csv_reader::CsvReader::new(file_path)?;
-    let headers = csv_reader.headers();
-
     let mut count = 0;
 
-    // Skip the header line
-    let mut lines_iter = csv_reader.lines();
-    if let Some(Ok(_)) = lines_iter.next() {
-        // Header line skipped
-    } else {
-        // Handle the case where there is no next line or an error occurred
-        println!("No header found or an error occurred.");
-        return Ok(count);
-    }
+    let mut line_iter = csv_reader.lines();
+    let headers = get_headers(&mut line_iter)?;
 
     // Process and count records matching the condition
-    for result in lines_iter {
+    for result in line_iter {
         let record = result?;
         let record: Vec<&str> = record.split(',').collect();
         let parsed_command = sql_parser::ParsedCommand {
@@ -135,7 +141,7 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
             data_file: file_path.to_string(),
             condition: Some(condition.to_string()),
         };
-        if condition_checker::check_condition(&parsed_command, headers, &record) {
+        if condition_checker::check_condition(&parsed_command, &headers, &record) {
             count += 1;
         }
     }
@@ -158,33 +164,13 @@ fn handle_select_star_with_condition(
 ) -> Result<(), Box<dyn Error>> {
     // Create a CsvReader for the given file path
     let csv_reader = csv_reader::CsvReader::new(&command.data_file)?;
+    let mut line_iter = csv_reader.lines();
 
-    // Print the headers (first row of the CSV file)
-    let headers = csv_reader.headers();
-    println!("{}", headers.join(",")); // Print headers
-
-    // Skip the header line
-    let mut lines_iter = csv_reader.lines();
-    if let Some(Ok(_)) = lines_iter.next() {
-        // Header line skipped
-    } else {
-        // Handle the case where there is no next line or an error occurred
-        println!("No header found or an error occurred.");
-        return Ok(());
-    }
-
-    // Skip the header line
-    let mut lines_iter = csv_reader.lines();
-    if let Some(Ok(_)) = lines_iter.next() {
-        // Header line skipped
-    } else {
-        // Handle the case where there is no next line or an error occurred
-        println!("No header found or an error occurred.");
-        return Ok(());
-    }
+    let headers = get_headers(&mut line_iter)?;
+    print!("{:?}", headers);
 
     // Process each record (line) in the CSV file
-    for result in lines_iter {
+    for result in line_iter {
         // Get the next line from the iterator
         let record = result?;
 
@@ -192,7 +178,7 @@ fn handle_select_star_with_condition(
         let record: Vec<&str> = record.split(',').collect();
 
         // Check if the record matches the condition specified in the command
-        if condition_checker::check_condition(command, headers, &record) {
+        if condition_checker::check_condition(command, &headers, &record) {
             // If the record matches the condition, print the record
             println!("{}", record.join(","));
         }
@@ -204,11 +190,29 @@ fn handle_select_star_with_condition(
 /// Handles more complex queries with aggregate functions or column selections.
 fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), Box<dyn Error>> {
     let mut csv_reader = csv_reader::CsvReader::new(&command.data_file)?;
-    let headers = csv_reader.headers().clone();
     let is_aggregate_query = command
         .columns
         .iter()
         .any(|col| sql_parser::is_aggregate_function(col.as_str()));
+
+    if is_aggregate_query {
+        handle_aggregate_query(command, &mut csv_reader)?;
+    } else {
+        handle_column_selection_query(command, &mut csv_reader)?;
+    }
+
+    Ok(())
+}
+
+/// Handles queries with aggregate functions (e.g., SUM, AVG, MIN).
+fn handle_aggregate_query(
+    command: &mut sql_parser::ParsedCommand,
+    csv_reader: &mut csv_reader::CsvReader,
+) -> Result<(), Box<dyn Error>> {
+    let mut aggregates = aggregates::Aggregates::new();
+
+    let mut line_iter = csv_reader.lines();
+    let headers = get_headers(&mut line_iter)?;
 
     // Special case: Change "COUNT(*)" to "COUNT(<first_column>)"
     if command.columns.contains(&"COUNT(*)".to_string()) {
@@ -226,23 +230,6 @@ fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), B
             .collect();
     }
 
-    if is_aggregate_query {
-        handle_aggregate_query(command, &headers, &mut csv_reader)?;
-    } else {
-        handle_column_selection_query(command, &headers, &mut csv_reader)?;
-    }
-
-    Ok(())
-}
-
-/// Handles queries with aggregate functions (e.g., SUM, AVG, MIN).
-fn handle_aggregate_query(
-    command: &sql_parser::ParsedCommand,
-    headers: &[String],
-    rdr: &mut csv_reader::CsvReader,
-) -> Result<(), Box<dyn Error>> {
-    let mut aggregates = aggregates::Aggregates::new();
-
     // Register aggregate functions
     for column in &command.columns {
         if column.starts_with("SUM(") {
@@ -258,21 +245,11 @@ fn handle_aggregate_query(
         }
     }
 
-    // Skip the header line
-    let mut lines_iter = rdr.lines();
-    if let Some(Ok(_)) = lines_iter.next() {
-        // Header line skipped
-    } else {
-        // Handle the case where there is no next line or an error occurred
-        println!("No header found or an error occurred.");
-        return Ok(());
-    }
-
     // Apply aggregates to matching records
-    for result in lines_iter {
+    for result in line_iter {
         let record = result?;
         let record: Vec<&str> = record.split(',').collect();
-        if condition_checker::check_condition(command, headers, &record) {
+        if condition_checker::check_condition(command, &headers, &record) {
             for (i, field) in record.iter().enumerate() {
                 if let Ok(value) = field.parse::<f64>() {
                     for func in &command.columns {
@@ -307,9 +284,12 @@ fn handle_aggregate_query(
 /// Handles column selection queries (e.g., "SELECT col1, col2").
 fn handle_column_selection_query(
     command: &sql_parser::ParsedCommand,
-    headers: &[String],
-    rdr: &mut csv_reader::CsvReader,
+    csv_reader: &mut csv_reader::CsvReader,
 ) -> Result<(), Box<dyn Error>> {
+    let mut line_iter = csv_reader.lines();
+    let headers = get_headers(&mut line_iter)?;
+    print!("{:?}", headers);
+
     // Map column names to their indexes
     let column_indexes: Vec<_> = command
         .columns
@@ -317,25 +297,12 @@ fn handle_column_selection_query(
         .filter_map(|col| headers.iter().position(|h| h.trim() == col))
         .collect();
 
-    // Print selected columns' headers
-    println!("{}", command.columns.join(","));
-
-    // Skip the header line
-    let mut lines_iter = rdr.lines();
-    if let Some(Ok(_)) = lines_iter.next() {
-        // Header line skipped
-    } else {
-        // Handle the case where there is no next line or an error occurred
-        println!("No header found or an error occurred.");
-        return Ok(());
-    }
-
     // Process records, optionally filtering based on the condition
-    for result in lines_iter {
+    for result in line_iter {
         let record = result?;
         let record: Vec<&str> = record.split(',').collect();
         if command.condition.is_none()
-            || condition_checker::check_condition(command, headers, &record)
+            || condition_checker::check_condition(command, &headers, &record)
         {
             // Select the fields based on the column indexes
             let selected_fields: Vec<&str> = column_indexes

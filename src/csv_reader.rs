@@ -23,7 +23,6 @@ pub fn map_file(file_path: &str) -> io::Result<Mmap> {
 /// A struct that owns the memory-mapped file and provides an iterator for lines.
 pub struct CsvReader {
     mmap: Mmap,
-    headers: Vec<String>,
 }
 
 impl CsvReader {
@@ -31,28 +30,7 @@ impl CsvReader {
     pub fn new(file_path: &str) -> Result<Self, Box<dyn Error>> {
         // Memory map the file
         let mmap = map_file(file_path)?;
-
-        // Create a line iterator for the memory-mapped file
-        let mut line_iter = LineIterator::new(&mmap);
-        // Read the headers (first line of the CSV file)
-        let headers = if let Some(Ok(header_line)) = line_iter.next() {
-            // Split the header line into individual column names and collect into a Vec<String>
-            header_line
-                .split(',')
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>()
-        } else {
-            // Return an error if the headers cannot be read
-            return Err("Failed to read headers".into());
-        };
-
-        // Return the CsvReader with the headers
-        Ok(CsvReader { mmap, headers })
-    }
-
-    /// Returns the headers of the CSV file.
-    pub fn headers(&self) -> &Vec<String> {
-        &self.headers
+        Ok(CsvReader { mmap })
     }
 
     /// Returns an iterator over the lines of the CSV file.
