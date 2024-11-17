@@ -37,56 +37,18 @@
 */
 
 use std::env;
-use regex::Regex;
 use std::error::Error;
 // use std::process::Command;
 use std::fs::File;
 use std::io::{self, Write};
 // use std::io::{self, BufReader, BufRead, Write};
 
-mod csv_reader;  // Import the csv_reader module for reading CSV files
-mod aggregates;  // Import the aggregates module for aggregate functions
-
-// Struct to represent the parsed components of the SQL query
-#[derive(Debug)]
-struct ParsedCommand {
-    columns: Vec<String>,      // Selected columns or aggregate functions
-    data_file: String,         // Name of the CSV file to read
-    condition: Option<String>, // Optional condition for filtering rows
-}
-
-// Parses the SQL query string and extracts the columns, file, and condition
-fn parse_query(query: &str) -> Result<ParsedCommand, String> {
-    // Regular expression to match SELECT queries with an optional WHERE clause
-    let re = Regex::new(
-        r"(?i)SELECT\s+(?P<columns>.+?)\s+FROM\s+(?P<data_file>(?:[.\./]+)?[\w/._-]+\.csv)(?:\s+WHERE\s+(?P<condition>.+))?"
-    ).unwrap();
-
-    if let Some(caps) = re.captures(query) {
-        // Split the selected columns by comma and trim whitespace
-        let columns = caps["columns"].split(',')
-            .map(|col| col.trim().to_string())
-            .collect();
-
-        // Extract the data file name and optional condition
-        let data_file = caps["data_file"].to_string();
-        let condition = caps.name("condition").map(|m| m.as_str().to_string());
-
-        Ok(ParsedCommand { columns, data_file, condition })
-    } else {
-        Err("Invalid SQL Query format".to_string())
-    }
-}
-
-// Helper function to check if a column specifies an aggregate function
-fn is_aggregate_function(column: &str) -> bool {
-    column == "COUNT(*)"
-    || column.starts_with("SUM(") 
-    || column.starts_with("AVG(") 
-    || column.starts_with("MIN(") 
-    || column.starts_with("MAX(") 
-    || column.starts_with("COUNT(")
-}
+mod aggregates;
+// mod condition_checker;
+// mod constants;
+mod csv_reader; 
+mod sql_parser;
+mod utils;
 
 fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {  
     // Memory-map the file safely by using a helper function
@@ -108,7 +70,7 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
     // Process records and count those that meet the condition
     for result in rdr.records() {
         let record = result?;
-        if check_condition(&ParsedCommand { columns: vec![], data_file: file_path.to_string(), condition: Some(condition.to_string()) }, &headers, &record) {
+        if check_condition(&sql_parser::ParsedCommand { columns: vec![], data_file: file_path.to_string(), condition: Some(condition.to_string()) }, &headers, &record) {
             count += 1;
         }
     }
@@ -130,7 +92,7 @@ fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
 }
 
 // Modified helper function to evaluate compound WHERE clause with AND/OR
-fn check_condition(command: &ParsedCommand, headers: &[String], record: &csv::StringRecord) -> bool {
+fn check_condition(command: &sql_parser::ParsedCommand, headers: &[String], record: &csv::StringRecord) -> bool {
     if let Some(cond) = &command.condition {
         // Split conditions on OR, then split each OR clause on AND
         let or_clauses: Vec<&str> = cond.split("OR").map(|s| s.trim()).collect();
@@ -197,7 +159,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // Parse the query
-    match parse_query(sql_query) {
+    match sql_parser::parse_query(sql_query) {
         Ok(mut command) => {
             // Special case for "SELECT COUNT(*) FROM <file>"
             if command.columns.len() == 1 && command.columns[0] == "COUNT(*)" {
@@ -240,7 +202,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
 
                 // Check if any column is an aggregate function
-                let is_aggregate_query: bool = command.columns.iter().any(|col| is_aggregate_function(col));
+                let is_aggregate_query: bool = command.columns.iter().any(|col| sql_parser::is_aggregate_function(col));
 
                 // Special case for COUNT(*) with other aggregate functions. Change COUNT(*) to COUNT(header[0])
                 if command.columns.contains(&"COUNT(*)".to_string()) {
