@@ -12,7 +12,7 @@ pub struct ParsedCommand {
 pub fn parse_query(query: &str) -> Result<ParsedCommand, String> {
     // Regular expression to match SELECT queries with an optional WHERE clause
     let re = Regex::new(
-        r"(?i)SELECT\s+(?P<columns>.+?)\s+FROM\s+(?P<data_file>(?:[.\./]+)?[\w/._-]+\.csv)(?:\s+WHERE\s+(?P<condition>.+))?"
+        r"(?i)SELECT\s+(?P<columns>.+?)\s+FROM\s+(?P<data_file>(?:[.\./]+)?[\w/._-]+\.csv)(?:\s+WHERE\s+(?P<condition>.+?))?\s*$"
     ).unwrap();
 
     if let Some(caps) = re.captures(query) {
