@@ -41,9 +41,8 @@ use regex::Regex;
 use std::error::Error;
 // use std::process::Command;
 use std::fs::File;
-use std::io::{self, BufReader, BufWriter, BufRead, Read, Write};
+use std::io::{self, Write};
 // use std::io::{self, BufReader, BufRead, Write};
-use memmap2::Mmap;
 
 mod csv_reader;  // Import the csv_reader module for reading CSV files
 mod aggregates;  // Import the aggregates module for aggregate functions
@@ -89,135 +88,17 @@ fn is_aggregate_function(column: &str) -> bool {
     || column.starts_with("COUNT(")
 }
 
-// Special function to handle "SELECT COUNT(*) FROM <file>" using wc -l for efficiency
-fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
-    // XXX V1 .0082 seconds
-    // // Use `wc -l` to get the line count
-    // let output = Command::new("wc")
-    // .arg("-l")
-    // .arg(file_path)
-    // .output()?;
-    
-    // // Parse the output to get the line count as a number
-    // let count_str = String::from_utf8_lossy(&output.stdout);
-    // let line_count: usize = count_str.split_whitespace().next().unwrap().parse()?;
-    
-    // // Subtract one to exclude the header row
-    // Ok(line_count - 1)
-
-    // XXX V2 .0490 seconds
-    // // Read the CSV file and get headers
-    // let (_, mut rdr) = csv_reader::read_csv(file_path)?;
-
-    // let mut count = 0;
-    // // Process records and count those that meet the condition
-    // for result in rdr.records() {
-    //     result?;
-    //     count += 1;
-    // }
-
-    // Ok(count)
-
-    // XXX V3 .0131 seconds
-    // let file = File::open(file_path)?;
-    // let reader = BufReader::with_capacity(65536, file); // 64 KB buffer for efficiency
-    
-    // // Count lines by iterating through the reader
-    // let line_count = reader.lines().count();
-
-    // Ok(line_count)
-
-    // XXX V4 .0142 seconds
+fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {  
     // Open the file safely
     let file = File::open(file_path)?;
     
     // Memory-map the file safely by using a helper function
-    let mmap = map_file(&file)?;
+    let mmap = csv_reader::map_file(&file)?;
 
     // Count the number of newline characters
     let line_count = mmap.iter().filter(|&&b| b == b'\n').count();
 
     Ok(line_count - 1)
-
-    // XXX V5 .0142 seconds
-    // // Open the file
-    // let file = File::open(file_path)?;
-    
-    // // Memory-map the file safely
-    // let mmap = map_file(&file)?;
-
-    // // Count the number of newlines with a manual loop for better performance
-    // let mut line_count = 0;
-    // let len = mmap.len();
-    
-    // // Iterate through the memory-mapped data directly to count newlines
-    // for i in 0..len {
-    //     if mmap[i] == b'\n' {
-    //         line_count += 1;
-    //     }
-    // }
-
-    // Ok(line_count)
-
-    // XXX V6 .0147 seconds
-    // // Open the file
-    // let file = File::open(file_path)?;
-
-    // // Create a buffered reader with a large buffer (e.g., 1MB buffer)
-    // let reader = BufReader::with_capacity(1 << 20, file); // 1 MB buffer
-
-    // // Count the lines by iterating through the buffer and counting newlines
-    // let line_count = reader.lines().filter(|line| line.is_ok()).count();
-
-    // Ok(line_count)
-
-    // XXX V7 .0209 seconds
-    // let mut file = File::open(file_path)?;
-
-    // let mut line_count = 0;
-    // let mut buffer = [0u8; 8192]; // 8 KB buffer for direct reads
-
-    // // Read the file in chunks
-    // loop {
-    //     let bytes_read = file.read(&mut buffer)?;
-
-    //     if bytes_read == 0 {
-    //         break;
-    //     }
-
-    //     // Convert the buffer to a string slice and count newlines
-    //     if let Ok(slice) = std::str::from_utf8(&buffer[..bytes_read]) {
-    //         line_count += slice.chars().filter(|&c| c == '\n').count();
-    //     }
-    // }
-
-    // Ok(line_count)
-
-    // XXX V8 .0126 seconds
-    // // Open the file
-    // let file = File::open(file_path)?;
-
-    // // Create a buffered reader with a larger buffer (e.g., 64 KB buffer)
-    // let reader = BufReader::with_capacity(64 * 1024, file); // 64 KB buffer
-
-    // // Count the lines by iterating through the buffer and counting newlines
-    // let line_count = reader.lines().filter(|line| line.is_ok()).count();
-
-    // Ok(line_count) 
-}
-
-// Helper function to map a file safely
-fn map_file(file: &File) -> io::Result<Mmap> {
-    // Safety: ensure that the file is valid and we can safely map it
-    let metadata = file.metadata()?;
-    if metadata.len() == 0 {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "File is empty"));
-    }
-
-    // Memory map the file (unsafe, but validated)
-    unsafe {
-        Mmap::map(file).map_err(|e| io::Error::new(io::ErrorKind::Other, e))
-    }
 }
 
 // Function to count rows based on a condition ("SELECT COUNT() WHERE <condition>")
@@ -238,189 +119,12 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
     Ok(count)
 }
 
-// Special function to print all rows of a file using `cat` ("SELECT * FROM <file>")
 fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
-    // XXX: V1: 0.0336 seconds
-    // let _output = Command::new("cat")
-    //     .arg(file_path)
-    //     .output()?;
-
-    // Ok(())
-
-    // XXX: V2: 0.0733 seconds
-    // // Read the CSV file and get headers
-    // let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
-
-    // // Print headers
-    // println!("{}", headers.join(","));
-
-    // // Process and print each record
-    // for result in rdr.records() {
-    //     let record = result?;
-    //     println!("{}", record.iter().collect::<Vec<&str>>().join(","));
-    // }
-
-    // Ok(())
-
-    // XXX: V3: .0822 seconds
-    // // Read the CSV file and get headers
-    // let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
-
-    // // Print headers
-    // println!("{}", headers.join(","));
-
-    // // Process and print each record
-    // let mut record_string = String::new();
-    // for result in rdr.records() {
-    //     let record = result?;
-    //     record_string.clear();
-    //     for (i, field) in record.iter().enumerate() {
-    //         if i > 0 {
-    //             record_string.push(',');
-    //         }
-    //         record_string.push_str(field);
-    //     }
-    //     println!("{}", record_string);
-    // }
-
-    // Ok(())
-
-    // XXX: V4: .0663 seconds
-    // // Read the CSV file and get headers
-    // let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
-
-    // // Print headers
-    // println!("{}", headers.join(","));
-
-    // // Process and print each record
-    // let mut record_string = Vec::new();
-    // let stdout = io::stdout();
-    // let mut handle = stdout.lock();
-
-    // for result in rdr.records() {
-    //     let record = result?;
-    //     record_string.clear();
-    //     for (i, field) in record.iter().enumerate() {
-    //         if i > 0 {
-    //             record_string.push(b',');
-    //         }
-    //         record_string.extend_from_slice(field.as_bytes());
-    //     }
-    //     record_string.push(b'\n');
-    //     handle.write_all(&record_string)?;
-    // }
-
-    // Ok(())
-
-    // XXX: V5: .0645 seconds
-    // let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
-
-    // // Print headers
-    // let stdout = io::stdout();
-    // let mut handle = stdout.lock();
-    // writeln!(handle, "{}", headers.join(","))?;
-
-    // // Process and print each record
-    // let mut record_string = Vec::with_capacity(1024); // Pre-allocate a buffer
-    // for result in rdr.records() {
-    //     let record = result?;
-    //     record_string.clear();
-    //     for (i, field) in record.iter().enumerate() {
-    //         if i > 0 {
-    //             record_string.push(b',');
-    //         }
-    //         record_string.extend_from_slice(field.as_bytes());
-    //     }
-    //     record_string.push(b'\n');
-    //     handle.write_all(&record_string)?;
-    // }
-
-    // Ok(())
-
-    // XXX: V6: .0500 seconds
-    // // Read the CSV file and get headers
-    // let (headers, mut rdr) = csv_reader::read_csv(file_path)?;
-
-    // // Print headers
-    // let stdout = io::stdout();
-    // let mut handle = stdout.lock();
-    // writeln!(handle, "{}", headers.join(","))?;
-
-    // // Process and print each record
-    // let mut record_string = Vec::with_capacity(1024); // Pre-allocate a buffer
-    // let mut output_buffer = Vec::with_capacity(8192); // Buffer for batching writes
-
-    // for result in rdr.records() {
-    //     let record = result?;
-    //     record_string.clear();
-    //     for (i, field) in record.iter().enumerate() {
-    //         if i > 0 {
-    //             record_string.push(b',');
-    //         }
-    //         record_string.extend_from_slice(field.as_bytes());
-    //     }
-    //     record_string.push(b'\n');
-    //     output_buffer.extend_from_slice(&record_string);
-
-    //     // Flush the buffer if it gets too large
-    //     if output_buffer.len() > 8192 {
-    //         handle.write_all(&output_buffer)?;
-    //         output_buffer.clear();
-    //     }
-    // }
-
-    // // Write any remaining data in the buffer
-    // if !output_buffer.is_empty() {
-    //     handle.write_all(&output_buffer)?;
-    // }
-
-    // Ok(())
-
-    // XXX V7 0.0052 seconds (6.5x faster than V1)
-    // // Open the file and wrap it in a buffered reader
-    // let file = File::open(file_path)?;
-    // let mut reader = BufReader::with_capacity(65536, file); // Large buffer for reading
-
-    // // Wrap stdout in a buffered writer
-    // let stdout = io::stdout();
-    // let mut writer = BufWriter::with_capacity(65536, stdout.lock()); // Large buffer for writing
-
-    // // Buffer for chunks of the file
-    // let mut buffer = vec![0; 65536];
-
-    // // Read and write chunks
-    // loop {
-    //     let bytes_read = reader.read(&mut buffer)?;
-    //     if bytes_read == 0 {
-    //         break; // EOF
-    //     }
-    //     writer.write_all(&buffer[..bytes_read])?;
-    // }
-
-    // writer.flush()?; // Ensure everything is written
-    // Ok(())
-
-    // XXX V8 0.0023 seconds (14.6x faster than V1)
-    // // Open the file
-    // let file = File::open(file_path)?;
-        
-    // // Memory-map the file
-    // let mmap = unsafe { Mmap::map(&file)? };
-
-    // // Write directly to stdout
-    // let stdout = io::stdout();
-    // let mut handle = stdout.lock();
-    // handle.write_all(&mmap)?;
-    // handle.flush()?; // Ensure all data is written out
-
-    // Ok(())
-
-    // XXX V9 0.0022 seconds (15.3x faster than V1)
     // Open the file in read-only mode
     let file = File::open(file_path)?;
     
     // Memory-map the file safely by using a helper function
-    let mmap = map_file(&file)?;
+    let mmap = csv_reader::map_file(&file)?;
 
     // Write the memory-mapped data directly to stdout
     let stdout = io::stdout();
