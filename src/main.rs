@@ -5,6 +5,7 @@
     - #3. Generate flamegraphs for profiling and keep tracks of what I did to optimize for my report (different versions/executable names?)
     - #4. Do improvements and optimizations (UPDATE CARGO.TOML VERSION AND DO cargo pkgid TO SEE VERSIONS)
     - WORK ON READER! (SEE IF I CAN USE BufReader)
+    - Fix WHERE with OR
     - Double check outputs (COUNT(*) and general format)
     - https://users.rust-lang.org/t/how-can-i-input-and-output-contents-fastest-in-output-stream-in-a-oj-system/61054/2
     - IN REPORT AND SLIDES, SHOW THAT TIME IS "REAL" TIME
@@ -39,7 +40,6 @@
 
 use std::env;
 use std::error::Error;
-use std::fs::File;
 use std::io::{self, Write};
 
 // Modules for handling specific functionalities
@@ -111,18 +111,31 @@ fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
 
 /// Counts rows in the CSV file that satisfy a given condition.
 fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<dyn Error>> {
-    let (headers, mut rdr) = csv_reader::read_csv(file_path)?; // Read the CSV file and headers
+    let csv_reader = csv_reader::CsvReader::new(file_path)?;
+    let headers = csv_reader.headers();
+
     let mut count = 0;
 
+    // Skip the header line
+    let mut lines_iter = csv_reader.lines();
+    if let Some(Ok(_)) = lines_iter.next() {
+        // Header line skipped
+    } else {
+        // Handle the case where there is no next line or an error occurred
+        println!("No header found or an error occurred.");
+        return Ok(count);
+    }
+
     // Process and count records matching the condition
-    for result in rdr.records() {
+    for result in lines_iter {
         let record = result?;
+        let record: Vec<&str> = record.split(',').collect();
         let parsed_command = sql_parser::ParsedCommand {
             columns: vec![],
             data_file: file_path.to_string(),
             condition: Some(condition.to_string()),
         };
-        if condition_checker::check_condition(&parsed_command, &headers, &record) {
+        if condition_checker::check_condition(&parsed_command, headers, &record) {
             count += 1;
         }
     }
@@ -143,15 +156,45 @@ fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
 fn handle_select_star_with_condition(
     command: &sql_parser::ParsedCommand,
 ) -> Result<(), Box<dyn Error>> {
-    let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
+    // Create a CsvReader for the given file path
+    let csv_reader = csv_reader::CsvReader::new(&command.data_file)?;
+
+    // Print the headers (first row of the CSV file)
+    let headers = csv_reader.headers();
     println!("{}", headers.join(",")); // Print headers
 
-    // Process records matching the condition
-    for result in rdr.records() {
+    // Skip the header line
+    let mut lines_iter = csv_reader.lines();
+    if let Some(Ok(_)) = lines_iter.next() {
+        // Header line skipped
+    } else {
+        // Handle the case where there is no next line or an error occurred
+        println!("No header found or an error occurred.");
+        return Ok(());
+    }
+
+    // Skip the header line
+    let mut lines_iter = csv_reader.lines();
+    if let Some(Ok(_)) = lines_iter.next() {
+        // Header line skipped
+    } else {
+        // Handle the case where there is no next line or an error occurred
+        println!("No header found or an error occurred.");
+        return Ok(());
+    }
+
+    // Process each record (line) in the CSV file
+    for result in lines_iter {
+        // Get the next line from the iterator
         let record = result?;
-        if condition_checker::check_condition(command, &headers, &record) {
-            let row: Vec<&str> = record.iter().collect();
-            println!("{}", row.join(","));
+
+        // Split the line into individual fields
+        let record: Vec<&str> = record.split(',').collect();
+
+        // Check if the record matches the condition specified in the command
+        if condition_checker::check_condition(command, headers, &record) {
+            // If the record matches the condition, print the record
+            println!("{}", record.join(","));
         }
     }
 
@@ -160,7 +203,8 @@ fn handle_select_star_with_condition(
 
 /// Handles more complex queries with aggregate functions or column selections.
 fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), Box<dyn Error>> {
-    let (headers, mut rdr) = csv_reader::read_csv(&command.data_file)?;
+    let mut csv_reader = csv_reader::CsvReader::new(&command.data_file)?;
+    let headers = csv_reader.headers().clone();
     let is_aggregate_query = command
         .columns
         .iter()
@@ -183,9 +227,9 @@ fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), B
     }
 
     if is_aggregate_query {
-        handle_aggregate_query(command, &headers, &mut rdr)?;
+        handle_aggregate_query(command, &headers, &mut csv_reader)?;
     } else {
-        handle_column_selection_query(command, &headers, &mut rdr)?;
+        handle_column_selection_query(command, &headers, &mut csv_reader)?;
     }
 
     Ok(())
@@ -195,7 +239,7 @@ fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), B
 fn handle_aggregate_query(
     command: &sql_parser::ParsedCommand,
     headers: &[String],
-    rdr: &mut csv::Reader<File>,
+    rdr: &mut csv_reader::CsvReader,
 ) -> Result<(), Box<dyn Error>> {
     let mut aggregates = aggregates::Aggregates::new();
 
@@ -214,9 +258,20 @@ fn handle_aggregate_query(
         }
     }
 
+    // Skip the header line
+    let mut lines_iter = rdr.lines();
+    if let Some(Ok(_)) = lines_iter.next() {
+        // Header line skipped
+    } else {
+        // Handle the case where there is no next line or an error occurred
+        println!("No header found or an error occurred.");
+        return Ok(());
+    }
+
     // Apply aggregates to matching records
-    for result in rdr.records() {
+    for result in lines_iter {
         let record = result?;
+        let record: Vec<&str> = record.split(',').collect();
         if condition_checker::check_condition(command, headers, &record) {
             for (i, field) in record.iter().enumerate() {
                 if let Ok(value) = field.parse::<f64>() {
@@ -253,26 +308,41 @@ fn handle_aggregate_query(
 fn handle_column_selection_query(
     command: &sql_parser::ParsedCommand,
     headers: &[String],
-    rdr: &mut csv::Reader<File>,
+    rdr: &mut csv_reader::CsvReader,
 ) -> Result<(), Box<dyn Error>> {
+    // Map column names to their indexes
     let column_indexes: Vec<_> = command
         .columns
         .iter()
-        .filter_map(|col| headers.iter().position(|h| h == col))
+        .filter_map(|col| headers.iter().position(|h| h.trim() == col))
         .collect();
 
-    println!("{}", command.columns.join(",")); // Print selected columns' headers
+    // Print selected columns' headers
+    println!("{}", command.columns.join(","));
+
+    // Skip the header line
+    let mut lines_iter = rdr.lines();
+    if let Some(Ok(_)) = lines_iter.next() {
+        // Header line skipped
+    } else {
+        // Handle the case where there is no next line or an error occurred
+        println!("No header found or an error occurred.");
+        return Ok(());
+    }
 
     // Process records, optionally filtering based on the condition
-    for result in rdr.records() {
+    for result in lines_iter {
         let record = result?;
+        let record: Vec<&str> = record.split(',').collect();
         if command.condition.is_none()
             || condition_checker::check_condition(command, headers, &record)
         {
+            // Select the fields based on the column indexes
             let selected_fields: Vec<&str> = column_indexes
                 .iter()
-                .map(|&index| record.get(index).unwrap_or(""))
+                .map(|&index| record.get(index).copied().unwrap_or(""))
                 .collect();
+            // Print the selected fields
             println!("{}", selected_fields.join(","));
         }
     }

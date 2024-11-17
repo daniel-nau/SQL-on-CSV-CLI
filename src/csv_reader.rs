@@ -1,18 +1,18 @@
+use memmap2::Mmap;
 use std::error::Error;
 use std::fs::File;
-// use csv::{ReaderBuilder, Reader, StringRecord};
-use csv::ReaderBuilder;
-use memmap2::Mmap;
-// use std::io::{self, Cursor};
-use std::io::{self};
+use std::io;
+use std::str::from_utf8;
 
-// Helper function to map a file safely
+/// Memory-maps the given file.
 pub fn map_file(file_path: &str) -> io::Result<Mmap> {
+    // Open the CSV file
     let file = File::open(file_path)?;
 
-    // Safety: ensure that the file is valid and we can safely map it
+    // Get the metadata of the file to check its size
     let metadata = file.metadata()?;
     if metadata.len() == 0 {
+        // Return an error if the file is empty
         return Err(io::Error::new(io::ErrorKind::InvalidData, "File is empty"));
     }
 
@@ -20,75 +20,97 @@ pub fn map_file(file_path: &str) -> io::Result<Mmap> {
     unsafe { Mmap::map(&file).map_err(|e| io::Error::new(io::ErrorKind::Other, e)) }
 }
 
-// struct CsvReaderWithMmap {
-//     mmap: Mmap,
-//     reader: Reader<Cursor<&'static [u8]>>,
-// }
+/// A struct that owns the memory-mapped file and provides an iterator for lines.
+pub struct CsvReader {
+    mmap: Mmap,
+    headers: Vec<String>,
+}
 
-// impl CsvReaderWithMmap {
-//     // Method to iterate over records in the CSV file
-//     pub fn records(&mut self) -> csv::Result<impl Iterator<Item = csv::Result<StringRecord>>> {
-//         Ok(self.reader.records())
-//     }
-// }
+impl CsvReader {
+    /// Creates a new CsvReader for the given file path.
+    pub fn new(file_path: &str) -> Result<Self, Box<dyn Error>> {
+        // Memory map the file
+        let mmap = map_file(file_path)?;
 
-// pub fn read_csv(file_path: &str) -> Result<(Vec<String>, CsvReaderWithMmap), Box<dyn Error>> {
-pub fn read_csv(file_path: &str) -> Result<(Vec<String>, csv::Reader<File>), Box<dyn Error>> {
-    // XXX V1 .0968 seconds
-    // Open the CSV file
-    let file = File::open(file_path)?;
+        // Create a line iterator for the memory-mapped file
+        let mut line_iter = LineIterator::new(&mmap);
+        // Read the headers (first line of the CSV file)
+        let headers = if let Some(Ok(header_line)) = line_iter.next() {
+            // Split the header line into individual column names and collect into a Vec<String>
+            header_line
+                .split(',')
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>()
+        } else {
+            // Return an error if the headers cannot be read
+            return Err("Failed to read headers".into());
+        };
 
-    // Create a CSV reader with flexible options
-    let mut rdr = ReaderBuilder::new()
-        .has_headers(true) // Assuming the CSV has headers
-        // .flexible(true)    // Allow for flexible column formats
-        .from_reader(file);
+        // Return the CsvReader with the headers
+        Ok(CsvReader { mmap, headers })
+    }
 
-    // Get the headers (first row) to know column names
-    let headers = rdr
-        .headers()?
-        .iter()
-        .map(|s| s.to_string())
-        .collect::<Vec<String>>();
+    /// Returns the headers of the CSV file.
+    pub fn headers(&self) -> &Vec<String> {
+        &self.headers
+    }
 
-    Ok((headers, rdr))
+    /// Returns an iterator over the lines of the CSV file.
+    pub fn lines(&self) -> LineIterator {
+        LineIterator::new(&self.mmap)
+    }
+}
 
-    // XXX V2 .0944 seconds
-    // // Open the CSV file
-    // let file = File::open(file_path)?;
+/// An iterator to return lines from the memory-mapped file.
+pub struct LineIterator<'a> {
+    mmap: &'a Mmap, // Reference to the memory-mapped file
+    start: usize,   // Start position for the next line
+    end: usize,     // End position of the file
+}
 
-    // // Memory-map the file
-    // let mmap = unsafe { Mmap::map(&file)? };
+impl<'a> LineIterator<'a> {
+    /// Creates a new LineIterator for the given memory-mapped file.
+    fn new(mmap: &'a Mmap) -> Self {
+        LineIterator {
+            mmap,
+            start: 0,
+            end: mmap.len(),
+        }
+    }
+}
 
-    // // Create a buffered reader from the memory-mapped data
-    // // let buf_reader = BufReader::new(io::Cursor::new(&mmap));
-    // let buf_reader = BufReader::new(io::Cursor::new(mmap.to_vec()));  // Copy the data into a Vec<u8> to own it
+impl<'a> Iterator for LineIterator<'a> {
+    type Item = io::Result<String>;
 
-    // // Create the CSV reader from the buffered reader
-    // let mut rdr = ReaderBuilder::new()
-    //     .has_headers(true)
-    //     .from_reader(buf_reader);
+    /// Returns the next line from the memory-mapped file.
+    fn next(&mut self) -> Option<Self::Item> {
+        // Check if the current position is beyond the end of the file
+        if self.start >= self.end {
+            return None; // No more lines to read
+        }
 
-    // // Get the headers (first row) to know column names
-    // let headers = rdr.headers()?.iter().map(|s| s.to_string()).collect::<Vec<String>>();
-
-    // Ok((headers, rdr))
-
-    // XXX V3
-    // // Open the CSV file
-    // let file = File::open(file_path)?;
-
-    // // Memory-map the file
-    // let mmap = unsafe { Mmap::map(&file)? };
-    // let cursor = Cursor::new(mmap.as_ref());
-
-    // // Create the CSV reader directly from the memory-mapped file (no need for BufReader)
-    // let mut rdr = ReaderBuilder::new()
-    //     .has_headers(true) // Assuming the CSV has headers
-    //     .from_reader(cursor); // Directly use the memory-mapped slice
-
-    // // Get the headers (first row) to know column names
-    // let headers = rdr.headers()?.iter().map(|s| s.to_string()).collect::<Vec<String>>();
-
-    // Ok((headers, CsvReaderWithMmap { mmap, reader: rdr }))
+        let start = self.start;
+        // Find the next newline character (`\n`)
+        if let Some(pos) = self.mmap[start..].iter().position(|&b| b == b'\n') {
+            // Extract the line from the current position to the newline character
+            let line = &self.mmap[start..start + pos];
+            // Update the start position to the character after the newline
+            self.start += pos + 1;
+            // Convert the line to a UTF-8 string and return it
+            match from_utf8(line) {
+                Ok(s) => Some(Ok(s.to_string())),
+                Err(e) => Some(Err(io::Error::new(io::ErrorKind::InvalidData, e))),
+            }
+        } else {
+            // No more newlines, return the last line (if any)
+            let line = &self.mmap[start..];
+            // Set start to end to indicate we're done
+            self.start = self.end;
+            // Convert the line to a UTF-8 string and return it
+            match from_utf8(line) {
+                Ok(s) => Some(Ok(s.to_string())),
+                Err(e) => Some(Err(io::Error::new(io::ErrorKind::InvalidData, e))),
+            }
+        }
+    }
 }

@@ -4,7 +4,7 @@ use crate::sql_parser;
 pub fn check_condition(
     command: &sql_parser::ParsedCommand,
     headers: &[String],
-    record: &csv::StringRecord,
+    record: &[&str],
 ) -> bool {
     if let Some(cond) = &command.condition {
         // Split conditions on OR, then split each OR clause on AND
@@ -32,7 +32,7 @@ pub fn check_condition(
 }
 
 // Helper function to evaluate a single condition
-pub fn evaluate_condition(condition: &str, headers: &[String], record: &csv::StringRecord) -> bool {
+pub fn evaluate_condition(condition: &str, headers: &[String], record: &[&str]) -> bool {
     let parts: Vec<&str> = condition.split_whitespace().collect();
     if parts.len() == 3 {
         let column_name = parts[0];
@@ -42,7 +42,7 @@ pub fn evaluate_condition(condition: &str, headers: &[String], record: &csv::Str
         if let Some(column_index) = headers.iter().position(|h| h == column_name) {
             let field_value: f64 = record
                 .get(column_index)
-                .unwrap_or("")
+                .unwrap_or(&"")
                 .parse()
                 .unwrap_or(f64::NAN);
             return match operator {
