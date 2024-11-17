@@ -299,13 +299,27 @@ fn handle_column_selection_query(
         .filter_map(|col| headers.iter().position(|h| h.trim() == col))
         .collect();
 
-    // Process records, optionally filtering based on the condition
-    for result in line_iter {
-        let record = result?;
-        let record: Vec<&str> = record.split(',').collect();
-        if command.condition.is_none()
-            || condition_checker::check_condition(command, &headers, &record)
-        {
+    // Process records based on whether there is a condition or not
+    if let Some(_condition) = &command.condition {
+        // There is a condition
+        for result in line_iter {
+            let record = result?;
+            let record: Vec<&str> = record.split(',').collect();
+            if condition_checker::check_condition(command, &headers, &record) {
+                // Select the fields based on the column indexes
+                let selected_fields: Vec<&str> = column_indexes
+                    .iter()
+                    .map(|&index| record.get(index).copied().unwrap_or(""))
+                    .collect();
+                // Print the selected fields
+                println!("{}", selected_fields.join(","));
+            }
+        }
+    } else {
+        // There is no condition
+        for result in line_iter {
+            let record = result?;
+            let record: Vec<&str> = record.split(',').collect();
             // Select the fields based on the column indexes
             let selected_fields: Vec<&str> = column_indexes
                 .iter()
