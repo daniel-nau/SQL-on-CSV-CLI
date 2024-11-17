@@ -44,7 +44,7 @@ use std::io::{self, Write};
 // use std::io::{self, BufReader, BufRead, Write};
 
 mod aggregates;
-// mod condition_checker;
+mod condition_checker;
 // mod constants;
 mod csv_reader; 
 mod sql_parser;
@@ -70,7 +70,7 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
     // Process records and count those that meet the condition
     for result in rdr.records() {
         let record = result?;
-        if check_condition(&sql_parser::ParsedCommand { columns: vec![], data_file: file_path.to_string(), condition: Some(condition.to_string()) }, &headers, &record) {
+        if condition_checker::check_condition(&sql_parser::ParsedCommand { columns: vec![], data_file: file_path.to_string(), condition: Some(condition.to_string()) }, &headers, &record) {
             count += 1;
         }
     }
@@ -89,57 +89,6 @@ fn select_star(file_path: &str) -> Result<(), Box<dyn Error>> {
     handle.flush()?; // Ensure all data is written out
 
     Ok(())
-}
-
-// Modified helper function to evaluate compound WHERE clause with AND/OR
-fn check_condition(command: &sql_parser::ParsedCommand, headers: &[String], record: &csv::StringRecord) -> bool {
-    if let Some(cond) = &command.condition {
-        // Split conditions on OR, then split each OR clause on AND
-        let or_clauses: Vec<&str> = cond.split("OR").map(|s| s.trim()).collect();
-
-        for or_clause in or_clauses {
-            let and_clauses: Vec<&str> = or_clause.split("AND").map(|s| s.trim()).collect();
-
-            let mut and_result = true;
-            for and_clause in and_clauses {
-                if !evaluate_condition(and_clause, headers, record) {
-                    and_result = false;
-                    break;
-                }
-            }
-
-            if and_result {
-                return true;
-            }
-        }
-        false
-    } else {
-        true
-    }
-}
-
-// Helper function to evaluate a single condition
-fn evaluate_condition(condition: &str, headers: &[String], record: &csv::StringRecord) -> bool {
-    let parts: Vec<&str> = condition.split_whitespace().collect();
-    if parts.len() == 3 {
-        let column_name = parts[0];
-        let operator = parts[1];
-        let value: f64 = parts[2].parse().unwrap_or(f64::NAN);
-
-        if let Some(column_index) = headers.iter().position(|h| h == column_name) {
-            let field_value: f64 = record.get(column_index).unwrap_or("").parse().unwrap_or(f64::NAN);
-            return match operator {
-                "<" => field_value < value,
-                ">" => field_value > value,
-                "<=" => field_value <= value,
-                ">=" => field_value >= value,
-                "==" => field_value == value,
-                "!=" => field_value != value,
-                _ => false,
-            };
-        }
-    }
-    false
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -192,7 +141,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Process and filter records
                 for result in rdr.records() {
                     let record = result?;
-                    if check_condition(&command, &headers, &record) {
+                    if condition_checker::check_condition(&command, &headers, &record) {
                         let row: Vec<&str> = record.iter().collect();
                         println!("{}", row.join(","));
                     }
@@ -241,7 +190,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     // Process each record, applying aggregates if it meets the condition
                     for result in rdr.records() {
                         let record = result?;
-                        if check_condition(&command, &headers, &record) {
+                        if condition_checker::check_condition(&command, &headers, &record) {
                             for (i, field) in record.iter().enumerate() {
                                 // println!("i {}, field: {}", i, field);
                                 if let Ok(value) = field.parse::<f64>() {
@@ -298,7 +247,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         // Process records, filtering and printing selected columns if they meet the condition
                         for result in rdr.records() {
                             let record = result?;
-                            if check_condition(&command, &headers, &record) {
+                            if condition_checker::check_condition(&command, &headers, &record) {
                                 let selected_fields: Vec<&str> = column_indexes.iter()
                                     .map(|&index| record.get(index).unwrap_or(""))
                                     .collect();
