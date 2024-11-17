@@ -332,8 +332,8 @@ fn handle_column_selection_query(
         let stdout = std::io::stdout();
         let mut writer = std::io::BufWriter::new(stdout.lock());
 
-        // Preallocate a buffer to avoid reallocations
-        let mut selected_fields_buffer = Vec::new();
+        // Preallocate a buffer to avoid reallocations, based on column_indexes size
+        let mut selected_fields_buffer = Vec::with_capacity(column_indexes.len());
 
         for result in line_iter {
             let record = result?;
@@ -356,8 +356,8 @@ fn handle_column_selection_query(
             // Write the joined line followed by a newline
             writeln!(writer, "{}", csv_line)?;
 
-            // Clear the buffer for the next line
-            selected_fields_buffer.clear();
+            // Reset the buffer for the next line by truncating it
+            selected_fields_buffer.truncate(0); // More efficient than clear() for reusing capacity
         }
 
         writer.flush()?; // Ensure all output is written to stdout
