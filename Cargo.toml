@@ -1,6 +1,6 @@
 [package]
-name = "csvsql_v2_2"
-version = "0.2.2"
+name = "csvsql_v2_3"
+version = "0.2.3"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,8 +12,13 @@ clap = { version = "4.0", features = ["derive"] }
 regex = "1.6"
 memmap2 = "0.5"
 
+[profile.release.package."*"]
+debug = true
+
 [profile.release]
 debug = true
 opt-level = 3
 lto = false
 codegen-units = 1
+debug-assertions = true
+strip = false

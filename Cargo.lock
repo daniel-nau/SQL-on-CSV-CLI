@@ -128,8 +128,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "csvsql_v2_2"
-version = "0.2.2"
+name = "csvsql_v2_3"
+version = "0.2.3"
 dependencies = [
  "clap",
  "csv",
