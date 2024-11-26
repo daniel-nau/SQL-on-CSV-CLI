@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io;
 
 /// Memory-maps the given file.
+#[inline(never)]
 pub fn map_file(file_path: &str) -> io::Result<Mmap> {
     let file = File::open(file_path)?;
     let metadata = file.metadata()?;
