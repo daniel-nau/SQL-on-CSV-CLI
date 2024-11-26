@@ -41,10 +41,10 @@
         - Find alternative CSV files to test with
 */
 
+use memchr::memchr_iter;
 use std::env;
 use std::error::Error;
 use std::io::{self, Write};
-use memchr::memchr_iter;
 
 // Modules for handling specific functionalities
 mod aggregates;
@@ -126,7 +126,7 @@ fn get_headers<'a>(
 /// Counts the number of rows in the CSV file (excluding the header row).
 fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
     let mmap = csv_reader::map_file(file_path)?; // Memory-map the file
-    // let line_count = mmap.iter().filter(|&&b| b == b'\n').count(); // Count newline characters
+                                                 // let line_count = mmap.iter().filter(|&&b| b == b'\n').count(); // Count newline characters
     let line_count = memchr_iter(b'\n', &mmap).count(); // Count newline characters using memchr
     Ok(line_count - 1) // Exclude the header
 }
@@ -139,6 +139,12 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
     let mut line_iter = csv_reader.lines();
     let headers = get_headers(&mut line_iter)?;
 
+    let parsed_command = sql_parser::ParsedCommand {
+        columns: vec![],
+        data_file: file_path.to_string(),
+        condition: Some(condition.to_string()),
+    };
+
     // Process and count records matching the condition
     for result in line_iter {
         let record = result?;
@@ -146,11 +152,6 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
             .split(|&b| b == b',')
             .map(|s| std::str::from_utf8(s).unwrap())
             .collect();
-        let parsed_command = sql_parser::ParsedCommand {
-            columns: vec![],
-            data_file: file_path.to_string(),
-            condition: Some(condition.to_string()),
-        };
         if condition_checker::check_condition(&parsed_command, &headers, &record) {
             count += 1;
         }
