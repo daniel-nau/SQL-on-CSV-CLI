@@ -133,6 +133,7 @@ version = "0.2.3"
 dependencies = [
  "clap",
  "csv",
+ "memchr",
  "memmap2",
  "regex",
  "sqlparser",
