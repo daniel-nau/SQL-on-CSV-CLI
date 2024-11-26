@@ -228,18 +228,19 @@ fn handle_aggregate_query(
 
     // Special case: Change "COUNT(*)" to "COUNT(<first_column>)"
     if command.columns.contains(&"COUNT(*)".to_string()) {
-        let first_column = headers.first().unwrap_or(&String::new()).clone();
-        command.columns = command
-            .columns
-            .iter()
-            .map(|col| {
-                if col == "COUNT(*)" {
-                    format!("COUNT({})", first_column)
-                } else {
-                    col.clone()
-                }
-            })
-            .collect();
+        if let Some(first_column) = headers.first() {
+            command.columns = command
+                .columns
+                .iter()
+                .map(|col| {
+                    if col == "COUNT(*)" {
+                        format!("COUNT({})", first_column)
+                    } else {
+                        col.clone()
+                    }
+                })
+                .collect();
+        }
     }
 
     // Register aggregate functions
@@ -256,22 +257,49 @@ fn handle_aggregate_query(
             aggregates.add_function(column.clone(), Box::new(aggregates::Count::new()));
         }
     }
+    // println!("{:?}", aggregates);
+
+    // Create a map from column names to their indices for quick lookup
+    let column_indices: std::collections::HashMap<_, _> = headers
+        .iter()
+        .enumerate()
+        .map(|(i, h)| (h.clone(), i))
+        .collect();
 
     // Apply aggregates to matching records
-    for result in line_iter {
-        let record = result?;
-        let record: Vec<&str> = record
-            .split(|&b| b == b',')
-            .map(|s| std::str::from_utf8(s).unwrap())
-            .collect();
-        if condition_checker::check_condition(command, &headers, &record) {
-            for (i, field) in record.iter().enumerate() {
-                if let Ok(value) = field.parse::<f64>() {
-                    for func in &command.columns {
-                        if func.contains(&headers[i]) {
-                            if let Some(agg) = aggregates.functions.get_mut(func) {
+    if let Some(_condition) = &command.condition {
+        // There is a condition
+        for result in line_iter {
+            let record = result?;
+            let record: Vec<&str> = record
+                .split(|&b| b == b',')
+                .map(|s| std::str::from_utf8(s).unwrap())
+                .collect();
+            if condition_checker::check_condition(command, &headers, &record) {
+                for (func, agg) in aggregates.functions.iter_mut() {
+                    if let Some(column_name) = func.split(|c| c == '(' || c == ')').nth(1) {
+                        if let Some(&index) = column_indices.get(column_name) {
+                            if let Ok(value) = record[index].parse::<f64>() {
                                 agg.apply(value);
                             }
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        // No condition
+        for result in line_iter {
+            let record = result?;
+            let record: Vec<&str> = record
+                .split(|&b| b == b',')
+                .map(|s| std::str::from_utf8(s).unwrap())
+                .collect();
+            for (func, agg) in aggregates.functions.iter_mut() {
+                if let Some(column_name) = func.split(|c| c == '(' || c == ')').nth(1) {
+                    if let Some(&index) = column_indices.get(column_name) {
+                        if let Ok(value) = record[index].parse::<f64>() {
+                            agg.apply(value);
                         }
                     }
                 }
