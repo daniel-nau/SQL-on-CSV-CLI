@@ -26,6 +26,7 @@
     - Ensure robust error handling
     - Add types?
     - Refactor code into smaller, more modular functions and clean up code
+    - Remove #[inline(never)] for final benchmarking
     - Optimize and explore alternatives for better performance ()
         - Consider avoiding Vecs where possible
         - Use references instead of cloning strings
@@ -50,6 +51,7 @@ mod csv_reader;
 mod sql_parser;
 
 /// Main entry point for the program.
+#[inline(never)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Parse command-line arguments
     let args: Vec<String> = env::args().collect();
@@ -103,6 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+#[inline(never)]
 fn get_headers<'a>(
     line_iter: &mut impl Iterator<Item = io::Result<&'a [u8]>>,
 ) -> Result<Vec<String>, Box<dyn Error>> {
@@ -195,6 +198,7 @@ fn handle_select_star_with_condition(
 }
 
 /// Handles more complex queries with aggregate functions or column selections.
+#[inline(never)]
 fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), Box<dyn Error>> {
     let mut csv_reader = csv_reader::CsvReader::new(&command.data_file)?;
     let is_aggregate_query = command
@@ -212,6 +216,7 @@ fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), B
 }
 
 /// Handles queries with aggregate functions (e.g., SUM, AVG, MIN).
+#[inline(never)]
 fn handle_aggregate_query(
     command: &mut sql_parser::ParsedCommand,
     csv_reader: &mut csv_reader::CsvReader,
@@ -292,6 +297,7 @@ fn handle_aggregate_query(
 }
 
 /// Handles column selection queries (e.g., "SELECT col1, col2").
+#[inline(never)]
 fn handle_column_selection_query(
     command: &sql_parser::ParsedCommand,
     csv_reader: &mut csv_reader::CsvReader,
@@ -299,8 +305,12 @@ fn handle_column_selection_query(
     let mut line_iter = csv_reader.lines();
     let headers = get_headers(&mut line_iter)?;
 
+    // Prepare the buffered writer for faster output
+    let stdout = std::io::stdout();
+    let mut writer = std::io::BufWriter::new(stdout.lock());
+
     // Print the selected columns as the header
-    println!("{}", command.columns.join(","));
+    writeln!(writer, "{}", command.columns.join(","))?;
 
     // Map column names to their indexes
     let column_indexes: Vec<_> = command
@@ -309,33 +319,45 @@ fn handle_column_selection_query(
         .filter_map(|col| headers.iter().position(|h| h.trim() == col))
         .collect();
 
+    // Preallocate a buffer to avoid reallocations, based on column_indexes size
+    let mut selected_fields_buffer = Vec::with_capacity(column_indexes.len());
+
     // Process records based on whether there is a condition or not
     if let Some(_condition) = &command.condition {
         // There is a condition
         for result in line_iter {
             let record = result?;
-            let record: Vec<&str> = record
+
+            // Split the line into fields and convert directly to UTF-8 strings
+            let record_str: Vec<&str> = record
                 .split(|&b| b == b',')
-                .map(|s| std::str::from_utf8(s).unwrap())
+                .map(|field| std::str::from_utf8(field).unwrap())
+                // .map(|field| unsafe {std::str::from_utf8_unchecked(field)}) // INFO: Saves about .02 seconds with "SELECT col_1 FROM data/small_tall.csv WHERE col_1 < .5"
                 .collect();
-            if condition_checker::check_condition(command, &headers, &record) {
+
+            if condition_checker::check_condition(command, &headers, &record_str) {
                 // Select the fields based on the column indexes
-                let selected_fields: Vec<&str> = column_indexes
-                    .iter()
-                    .map(|&index| record.get(index).copied().unwrap_or(""))
-                    .collect();
-                // Print the selected fields
-                println!("{}", selected_fields.join(","));
+                for &index in &column_indexes {
+                    selected_fields_buffer.push(record_str[index].as_bytes());
+                }
+
+                // Write the selected fields directly to the writer
+                for (i, field) in selected_fields_buffer.iter().enumerate() {
+                    if i > 0 {
+                        writer.write_all(b",")?;
+                    }
+                    writer.write_all(field)?;
+                }
+                writer.write_all(b"\n")?;
+
+                // Reset the buffer for the next line by truncating it
+                selected_fields_buffer.truncate(0); // More efficient than clear() for reusing capacity
             }
         }
+
+        writer.flush()?; // Ensure all output is written to stdout
     } else {
-        // Prepare the buffered writer for faster output
-        let stdout = std::io::stdout();
-        let mut writer = std::io::BufWriter::new(stdout.lock());
-
-        // Preallocate a buffer to avoid reallocations, based on column_indexes size
-        let mut selected_fields_buffer = Vec::with_capacity(column_indexes.len());
-
+        // No condition
         for result in line_iter {
             let record = result?;
 
