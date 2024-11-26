@@ -277,7 +277,7 @@ fn handle_aggregate_query(
                 .collect();
             if condition_checker::check_condition(command, &headers, &record) {
                 for (func, agg) in aggregates.functions.iter_mut() {
-                    if let Some(column_name) = func.split(|c| c == '(' || c == ')').nth(1) {
+                    if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
                         if let Some(&index) = column_indices.get(column_name) {
                             if let Ok(value) = record[index].parse::<f64>() {
                                 agg.apply(value);
@@ -296,7 +296,7 @@ fn handle_aggregate_query(
                 .map(|s| std::str::from_utf8(s).unwrap())
                 .collect();
             for (func, agg) in aggregates.functions.iter_mut() {
-                if let Some(column_name) = func.split(|c| c == '(' || c == ')').nth(1) {
+                if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
                     if let Some(&index) = column_indices.get(column_name) {
                         if let Ok(value) = record[index].parse::<f64>() {
                             agg.apply(value);
