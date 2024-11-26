@@ -41,7 +41,7 @@ pub fn evaluate_condition(condition: &str, headers: &[String], record: &[&str]) 
                 ">" => field_value > value,
                 "<=" => field_value <= value,
                 ">=" => field_value >= value,
-                "==" => field_value == value,
+                "=" => field_value == value,
                 "!=" => field_value != value,
                 _ => false,
             };
