@@ -1,6 +1,6 @@
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" width="1200" height="422" onload="init(evt)" viewBox="0 0 1200 422" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg version="1.1" width="1200" height="198" onload="init(evt)" viewBox="0 0 1200 198" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
 <!-- NOTES:  -->
 <defs>
@@ -422,201 +422,57 @@
 	}
 ]]>
 </script>
-<rect x="0.0" y="0" width="1200.0" height="422.0" fill="url(#background)"  />
+<rect x="0.0" y="0" width="1200.0" height="198.0" fill="url(#background)"  />
 <text id="title" x="600.00" y="24" >Flame Graph</text>
-<text id="details" x="10.00" y="405" > </text>
+<text id="details" x="10.00" y="181" > </text>
 <text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
 <text id="search" x="1090.00" y="24" >Search</text>
 <text id="ignorecase" x="1174.00" y="24" >ic</text>
-<text id="matched" x="1090.00" y="405" > </text>
+<text id="matched" x="1090.00" y="181" > </text>
 <g id="frames">
 <g >
-<title>copy_page_to_iter (40,404,040 samples, 7.27%)</title><rect x="10.0" y="213" width="85.8" height="15.0" fill="rgb(209,22,5)" rx="2" ry="2" />
-<text  x="13.00" y="223.5" >copy_page_..</text>
+<title>&lt;alloc::string::String as core::fmt::Display&gt;::fmt (10,101,010 samples, 16.67%)</title><rect x="796.7" y="69" width="196.6" height="15.0" fill="rgb(248,198,47)" rx="2" ry="2" />
+<text  x="799.67" y="79.5" >&lt;alloc::string::String as..</text>
 </g>
 <g >
-<title>_raw_spin_lock_irqsave (10,101,010 samples, 1.82%)</title><rect x="439.1" y="101" width="21.4" height="15.0" fill="rgb(247,195,46)" rx="2" ry="2" />
-<text  x="442.09" y="111.5" >_..</text>
+<title>_int_free (10,101,010 samples, 16.67%)</title><rect x="10.0" y="117" width="196.7" height="15.0" fill="rgb(247,196,46)" rx="2" ry="2" />
+<text  x="13.00" y="127.5" >_int_free</text>
 </g>
 <g >
-<title>_copy_from_iter (10,101,010 samples, 1.82%)</title><rect x="310.4" y="133" width="21.4" height="15.0" fill="rgb(227,104,24)" rx="2" ry="2" />
-<text  x="313.36" y="143.5" >_..</text>
+<title>core::fmt::write (10,101,010 samples, 16.67%)</title><rect x="993.3" y="69" width="196.7" height="15.0" fill="rgb(221,77,18)" rx="2" ry="2" />
+<text  x="996.33" y="79.5" >core::fmt::write</text>
 </g>
 <g >
-<title>std::io::stdio::_print (454,545,450 samples, 81.82%)</title><rect x="224.5" y="325" width="965.5" height="15.0" fill="rgb(236,145,34)" rx="2" ry="2" />
-<text  x="227.55" y="335.5" >std::io::stdio::_print</text>
+<title>all (60,606,060 samples, 100%)</title><rect x="10.0" y="149" width="1180.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
+<text  x="13.00" y="159.5" ></text>
 </g>
 <g >
-<title>copy_user_enhanced_fast_string (40,404,040 samples, 7.27%)</title><rect x="10.0" y="197" width="85.8" height="15.0" fill="rgb(238,155,37)" rx="2" ry="2" />
-<text  x="13.00" y="207.5" >copy_user_..</text>
+<title>&lt;std::io::stdio::StdoutLock as std::io::Write&gt;::write_all (10,101,010 samples, 16.67%)</title><rect x="993.3" y="37" width="196.7" height="15.0" fill="rgb(253,225,53)" rx="2" ry="2" />
+<text  x="996.33" y="47.5" >&lt;std::io::stdio::StdoutLo..</text>
 </g>
 <g >
-<title>ldsem_down_read (10,101,010 samples, 1.82%)</title><rect x="1104.2" y="117" width="21.4" height="15.0" fill="rgb(239,157,37)" rx="2" ry="2" />
-<text  x="1107.18" y="127.5" >l..</text>
+<title>csvsql_v1 (60,606,060 samples, 100.00%)</title><rect x="10.0" y="133" width="1180.0" height="15.0" fill="rgb(205,3,0)" rx="2" ry="2" />
+<text  x="13.00" y="143.5" >csvsql_v1</text>
 </g>
 <g >
-<title>n_tty_write (353,535,350 samples, 63.64%)</title><rect x="353.3" y="133" width="750.9" height="15.0" fill="rgb(210,23,5)" rx="2" ry="2" />
-<text  x="356.27" y="143.5" >n_tty_write</text>
+<title>std::io::stdio::_print (20,202,020 samples, 33.33%)</title><rect x="796.7" y="101" width="393.3" height="15.0" fill="rgb(236,145,34)" rx="2" ry="2" />
+<text  x="799.67" y="111.5" >std::io::stdio::_print</text>
 </g>
 <g >
-<title>new_sync_write (404,040,400 samples, 72.73%)</title><rect x="267.5" y="165" width="858.1" height="15.0" fill="rgb(244,181,43)" rx="2" ry="2" />
-<text  x="270.45" y="175.5" >new_sync_write</text>
+<title>&lt;std::io::Write::write_fmt::Adapter&lt;T&gt; as core::fmt::Write&gt;::write_str (10,101,010 samples, 16.67%)</title><rect x="993.3" y="53" width="196.7" height="15.0" fill="rgb(224,91,21)" rx="2" ry="2" />
+<text  x="996.33" y="63.5" >&lt;std::io::Write::write_fm..</text>
 </g>
 <g >
-<title>rcu_core (10,101,010 samples, 1.82%)</title><rect x="503.5" y="37" width="21.4" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
-<text  x="506.45" y="47.5" >r..</text>
+<title>csv_core::reader::Reader::read_record (30,303,030 samples, 50.00%)</title><rect x="206.7" y="117" width="590.0" height="15.0" fill="rgb(214,44,10)" rx="2" ry="2" />
+<text  x="209.67" y="127.5" >csv_core::reader::Reader::read_record</text>
 </g>
 <g >
-<title>tty_insert_flip_string_and_push_buffer (292,929,290 samples, 52.73%)</title><rect x="482.0" y="117" width="622.2" height="15.0" fill="rgb(217,55,13)" rx="2" ry="2" />
-<text  x="485.00" y="127.5" >tty_insert_flip_string_and_push_buffer</text>
+<title>&lt;&amp;std::io::stdio::Stdout as std::io::Write&gt;::write_fmt (20,202,020 samples, 33.33%)</title><rect x="796.7" y="85" width="393.3" height="15.0" fill="rgb(206,8,1)" rx="2" ry="2" />
+<text  x="799.67" y="95.5" >&lt;&amp;std::io::stdio::Stdout as std::io::Write&gt;::write_fmt</text>
 </g>
 <g >
-<title>&lt;&amp;std::io::stdio::Stdout as std::io::Write&gt;::write_fmt (454,545,450 samples, 81.82%)</title><rect x="224.5" y="309" width="965.5" height="15.0" fill="rgb(206,8,1)" rx="2" ry="2" />
-<text  x="227.55" y="319.5" >&lt;&amp;std::io::stdio::Stdout as std::io::Write&gt;::write_fmt</text>
-</g>
-<g >
-<title>csvsql_v1 (555,555,550 samples, 100.00%)</title><rect x="10.0" y="357" width="1180.0" height="15.0" fill="rgb(205,3,0)" rx="2" ry="2" />
-<text  x="13.00" y="367.5" >csvsql_v1</text>
-</g>
-<g >
-<title>core::fmt::write (454,545,450 samples, 81.82%)</title><rect x="224.5" y="293" width="965.5" height="15.0" fill="rgb(221,77,18)" rx="2" ry="2" />
-<text  x="227.55" y="303.5" >core::fmt::write</text>
-</g>
-<g >
-<title>tty_buffer_space_avail (10,101,010 samples, 1.82%)</title><rect x="460.5" y="117" width="21.5" height="15.0" fill="rgb(220,69,16)" rx="2" ry="2" />
-<text  x="463.55" y="127.5" >t..</text>
-</g>
-<g >
-<title>do_syscall_64 (404,040,400 samples, 72.73%)</title><rect x="267.5" y="213" width="858.1" height="15.0" fill="rgb(209,20,4)" rx="2" ry="2" />
-<text  x="270.45" y="223.5" >do_syscall_64</text>
-</g>
-<g >
-<title>ksys_write (404,040,400 samples, 72.73%)</title><rect x="267.5" y="197" width="858.1" height="15.0" fill="rgb(205,4,1)" rx="2" ry="2" />
-<text  x="270.45" y="207.5" >ksys_write</text>
-</g>
-<g >
-<title>__wake_up_common_lock (10,101,010 samples, 1.82%)</title><rect x="288.9" y="133" width="21.5" height="15.0" fill="rgb(238,155,37)" rx="2" ry="2" />
-<text  x="291.91" y="143.5" >_..</text>
-</g>
-<g >
-<title>&lt;std::io::stdio::StdoutLock as std::io::Write&gt;::write_all (444,444,440 samples, 80.00%)</title><rect x="224.5" y="261" width="944.0" height="15.0" fill="rgb(253,225,53)" rx="2" ry="2" />
-<text  x="227.55" y="271.5" >&lt;std::io::stdio::StdoutLock as std::io::Write&gt;::write_all</text>
-</g>
-<g >
-<title>do_syscall_64 (40,404,040 samples, 7.27%)</title><rect x="10.0" y="293" width="85.8" height="15.0" fill="rgb(209,20,4)" rx="2" ry="2" />
-<text  x="13.00" y="303.5" >do_syscall..</text>
-</g>
-<g >
-<title>mutex_unlock (10,101,010 samples, 1.82%)</title><rect x="331.8" y="133" width="21.5" height="15.0" fill="rgb(251,212,50)" rx="2" ry="2" />
-<text  x="334.82" y="143.5" >m..</text>
-</g>
-<g >
-<title>do_output_char (10,101,010 samples, 1.82%)</title><rect x="396.2" y="117" width="21.4" height="15.0" fill="rgb(247,197,47)" rx="2" ry="2" />
-<text  x="399.18" y="127.5" >d..</text>
-</g>
-<g >
-<title>csvsql_v1::main (464,646,460 samples, 83.64%)</title><rect x="203.1" y="341" width="986.9" height="15.0" fill="rgb(236,146,35)" rx="2" ry="2" />
-<text  x="206.09" y="351.5" >csvsql_v1::main</text>
-</g>
-<g >
-<title>&lt;csv::reader::StringRecordsIter&lt;R&gt; as core::iter::traits::iterator::Iterator&gt;::next (40,404,040 samples, 7.27%)</title><rect x="10.0" y="341" width="85.8" height="15.0" fill="rgb(216,53,12)" rx="2" ry="2" />
-<text  x="13.00" y="351.5" >&lt;csv::read..</text>
-</g>
-<g >
-<title>&lt;std::io::Write::write_fmt::Adapter&lt;T&gt; as core::fmt::Write&gt;::write_str (454,545,450 samples, 81.82%)</title><rect x="224.5" y="277" width="965.5" height="15.0" fill="rgb(224,91,21)" rx="2" ry="2" />
-<text  x="227.55" y="287.5" >&lt;std::io::Write::write_fmt::Adapter&lt;T&gt; as core::fmt::Write&gt;::write_str</text>
-</g>
-<g >
-<title>file_tty_write.constprop.0 (404,040,400 samples, 72.73%)</title><rect x="267.5" y="149" width="858.1" height="15.0" fill="rgb(219,64,15)" rx="2" ry="2" />
-<text  x="270.45" y="159.5" >file_tty_write.constprop.0</text>
-</g>
-<g >
-<title>vfs_write (404,040,400 samples, 72.73%)</title><rect x="267.5" y="181" width="858.1" height="15.0" fill="rgb(250,209,50)" rx="2" ry="2" />
-<text  x="270.45" y="191.5" >vfs_write</text>
-</g>
-<g >
-<title>entry_SYSCALL_64_after_hwframe (40,404,040 samples, 7.27%)</title><rect x="10.0" y="309" width="85.8" height="15.0" fill="rgb(218,63,15)" rx="2" ry="2" />
-<text  x="13.00" y="319.5" >entry_SYSC..</text>
-</g>
-<g >
-<title>entry_SYSCALL_64_after_hwframe (404,040,400 samples, 72.73%)</title><rect x="267.5" y="229" width="858.1" height="15.0" fill="rgb(218,63,15)" rx="2" ry="2" />
-<text  x="270.45" y="239.5" >entry_SYSCALL_64_after_hwframe</text>
-</g>
-<g >
-<title>ksys_read (40,404,040 samples, 7.27%)</title><rect x="10.0" y="277" width="85.8" height="15.0" fill="rgb(229,113,27)" rx="2" ry="2" />
-<text  x="13.00" y="287.5" >ksys_read</text>
-</g>
-<g >
-<title>queue_work_on (272,727,270 samples, 49.09%)</title><rect x="524.9" y="101" width="579.3" height="15.0" fill="rgb(248,200,48)" rx="2" ry="2" />
-<text  x="527.91" y="111.5" >queue_work_on</text>
-</g>
-<g >
-<title>__libc_read (40,404,040 samples, 7.27%)</title><rect x="10.0" y="325" width="85.8" height="15.0" fill="rgb(212,34,8)" rx="2" ry="2" />
-<text  x="13.00" y="335.5" >__libc_read</text>
-</g>
-<g >
-<title>&lt;&amp;std::io::stdio::Stdout as std::io::Write&gt;::write_fmt (10,101,010 samples, 1.82%)</title><rect x="203.1" y="325" width="21.4" height="15.0" fill="rgb(206,8,1)" rx="2" ry="2" />
-<text  x="206.09" y="335.5" >&lt;..</text>
-</g>
-<g >
-<title>handle_softirqs (10,101,010 samples, 1.82%)</title><rect x="503.5" y="53" width="21.4" height="15.0" fill="rgb(238,156,37)" rx="2" ry="2" />
-<text  x="506.45" y="63.5" >h..</text>
-</g>
-<g >
-<title>vfs_read (40,404,040 samples, 7.27%)</title><rect x="10.0" y="261" width="85.8" height="15.0" fill="rgb(224,88,21)" rx="2" ry="2" />
-<text  x="13.00" y="271.5" >vfs_read</text>
-</g>
-<g >
-<title>irq_exit_rcu (10,101,010 samples, 1.82%)</title><rect x="503.5" y="69" width="21.4" height="15.0" fill="rgb(254,227,54)" rx="2" ry="2" />
-<text  x="506.45" y="79.5" >i..</text>
-</g>
-<g >
-<title>core::slice::memchr::memrchr (20,202,020 samples, 3.64%)</title><rect x="1125.6" y="245" width="42.9" height="15.0" fill="rgb(205,3,0)" rx="2" ry="2" />
-<text  x="1128.64" y="255.5" >core..</text>
-</g>
-<g >
-<title>asm_sysvec_hyperv_stimer0 (10,101,010 samples, 1.82%)</title><rect x="503.5" y="101" width="21.4" height="15.0" fill="rgb(225,94,22)" rx="2" ry="2" />
-<text  x="506.45" y="111.5" >a..</text>
-</g>
-<g >
-<title>csv_core::reader::Reader::read_record (50,505,050 samples, 9.09%)</title><rect x="95.8" y="341" width="107.3" height="15.0" fill="rgb(214,44,10)" rx="2" ry="2" />
-<text  x="98.82" y="351.5" >csv_core::rea..</text>
-</g>
-<g >
-<title>sysvec_hyperv_stimer0 (10,101,010 samples, 1.82%)</title><rect x="503.5" y="85" width="21.4" height="15.0" fill="rgb(212,35,8)" rx="2" ry="2" />
-<text  x="506.45" y="95.5" >s..</text>
-</g>
-<g >
-<title>filemap_read (40,404,040 samples, 7.27%)</title><rect x="10.0" y="229" width="85.8" height="15.0" fill="rgb(246,192,46)" rx="2" ry="2" />
-<text  x="13.00" y="239.5" >filemap_read</text>
-</g>
-<g >
-<title>remove_wait_queue (10,101,010 samples, 1.82%)</title><rect x="439.1" y="117" width="21.4" height="15.0" fill="rgb(241,169,40)" rx="2" ry="2" />
-<text  x="442.09" y="127.5" >r..</text>
-</g>
-<g >
-<title>__libc_write (424,242,420 samples, 76.36%)</title><rect x="224.5" y="245" width="901.1" height="15.0" fill="rgb(238,154,37)" rx="2" ry="2" />
-<text  x="227.55" y="255.5" >__libc_write</text>
-</g>
-<g >
-<title>all (555,555,550 samples, 100%)</title><rect x="10.0" y="373" width="1180.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
-<text  x="13.00" y="383.5" ></text>
-</g>
-<g >
-<title>new_sync_read (40,404,040 samples, 7.27%)</title><rect x="10.0" y="245" width="85.8" height="15.0" fill="rgb(218,61,14)" rx="2" ry="2" />
-<text  x="13.00" y="255.5" >new_sync_r..</text>
-</g>
-<g >
-<title>mutex_unlock (10,101,010 samples, 1.82%)</title><rect x="417.6" y="117" width="21.5" height="15.0" fill="rgb(251,212,50)" rx="2" ry="2" />
-<text  x="420.64" y="127.5" >m..</text>
-</g>
-<g >
-<title>__memmove_avx_unaligned_erms (10,101,010 samples, 1.82%)</title><rect x="1168.5" y="261" width="21.5" height="15.0" fill="rgb(205,0,0)" rx="2" ry="2" />
-<text  x="1171.55" y="271.5" >_..</text>
-</g>
-<g >
-<title>tty_ldisc_ref_wait (10,101,010 samples, 1.82%)</title><rect x="1104.2" y="133" width="21.4" height="15.0" fill="rgb(217,55,13)" rx="2" ry="2" />
-<text  x="1107.18" y="143.5" >t..</text>
+<title>csvsql_v1::main (20,202,020 samples, 33.33%)</title><rect x="796.7" y="117" width="393.3" height="15.0" fill="rgb(236,146,35)" rx="2" ry="2" />
+<text  x="799.67" y="127.5" >csvsql_v1::main</text>
 </g>
 </g>
 </svg>
