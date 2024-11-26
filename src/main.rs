@@ -4,6 +4,7 @@
     - #2. Do benchmarking (increase # of runs for mine and DuckDB)
     - #3. Generate flamegraphs for profiling and keep tracks of what I did to optimize for my report (different versions/executable names?)
     - #4. Do improvements and optimizations (UPDATE CARGO.TOML VERSION AND DO cargo pkgid TO SEE VERSIONS)
+    - Do run_and_measure fore different queries and use those results and flamegraphs to optimize
     - Use flamegraphs and mainly work on optimizing output (and then other parts)
     - WORK ON READER! (SEE IF I CAN USE BufReader)
     - Fix WHERE with OR
