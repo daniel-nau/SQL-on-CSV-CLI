@@ -8,22 +8,16 @@ pub fn check_condition(
 ) -> bool {
     if let Some(cond) = &command.condition {
         // Split conditions on OR, then split each OR clause on AND
-        let or_clauses: Vec<&str> = cond.split("OR").map(|s| s.trim()).collect();
-
-        for or_clause in or_clauses {
-            let and_clauses: Vec<&str> = or_clause.split("AND").map(|s| s.trim()).collect();
-
-            // Evaluate all AND conditions within the OR clause
-            if and_clauses
-                .iter()
-                .all(|&and_clause| evaluate_condition(and_clause, headers, record))
-            {
-                return true; // If all AND conditions are true, the OR clause is true
-            }
-        }
-        return false;
+        cond.split("OR").any(|or_clause| {
+            or_clause.split("AND").all(|and_clause| {
+                let trimmed_clause = and_clause.trim();
+                // Evaluate the condition here (assuming a function `evaluate_condition`)
+                evaluate_condition(trimmed_clause, headers, record)
+            })
+        })
+    } else {
+        true
     }
-    true
 }
 
 // Helper function to evaluate a single condition
