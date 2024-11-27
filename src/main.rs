@@ -365,21 +365,54 @@ fn handle_aggregate_query(
                 }
             }
         } else {
-            // Process each record (line) in the CSV file
-            for result in line_iter {
-                let record = result?;
-                let record: Vec<&str> = record
-                    .split(|&b| b == b',')
-                    .map(|s| std::str::from_utf8(s).unwrap())
-                    .collect();
+            let single_condition = command
+                .condition
+                .as_deref()
+                .map_or(false, |cond| !cond.contains("AND") && !cond.contains("OR"));
 
-                // Check if the record matches the compound condition
-                if condition_checker::check_condition(command, &headers, &record) {
-                    for (func, agg) in aggregates.functions.iter_mut() {
-                        if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
-                            if let Some(&index) = column_indices.get(column_name) {
-                                if let Ok(value) = record[index].parse::<f64>() {
-                                    agg.apply(value);
+            if single_condition {
+                // Process each record (line) in the CSV file
+                for result in line_iter {
+                    let record = result?;
+                    let record: Vec<&str> = record
+                        .split(|&b| b == b',')
+                        .map(|s| std::str::from_utf8(s).unwrap())
+                        .collect();
+
+                    // Check if the record matches the compound condition
+                    if condition_checker::evaluate_condition(
+                        command.condition.as_ref().unwrap(),
+                        &headers,
+                        &record,
+                    ) {
+                        for (func, agg) in aggregates.functions.iter_mut() {
+                            if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
+                                if let Some(&index) = column_indices.get(column_name) {
+                                    if let Ok(value) = record[index].parse::<f64>() {
+                                        agg.apply(value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Process each record (line) in the CSV file
+                for result in line_iter {
+                    let record = result?;
+                    let record: Vec<&str> = record
+                        .split(|&b| b == b',')
+                        .map(|s| std::str::from_utf8(s).unwrap())
+                        .collect();
+
+                    // Check if the record matches the compound condition
+                    if condition_checker::check_condition(command, &headers, &record) {
+                        for (func, agg) in aggregates.functions.iter_mut() {
+                            if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
+                                if let Some(&index) = column_indices.get(column_name) {
+                                    if let Ok(value) = record[index].parse::<f64>() {
+                                        agg.apply(value);
+                                    }
                                 }
                             }
                         }
