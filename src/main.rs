@@ -2,12 +2,12 @@
     TODO:
     - Make a final build
         - cargo fmt and cargo clippy
-        - Remove #[inline(never)] for final benchmarking
-        - Optimize the build (strip, lto, etc.) in Cargo.toml  
+        - Remove #[inline(never)] for final build
+        - Optimize the build (strip, lto, etc.) in Cargo.toml
         - cargo build --release
-        - Strip the release binary 
+        - Strip the release binary
     - Do testing with smaller file and compare with DuckDB output
-    - Do final benchmarking on Isengard 
+    - Do final benchmarking on Isengard
         - More runs
         - Compare final version with DuckDB and V1
     - Put on GitHub and create a README
