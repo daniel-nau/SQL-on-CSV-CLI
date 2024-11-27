@@ -273,26 +273,24 @@ fn handle_select_star_with_condition(
         .as_deref()
         .map_or(false, |cond| !cond.contains("AND") && !cond.contains("OR"));
 
+    let required_headers = extract_required_headers(&headers, command.condition.as_ref().unwrap());
+
     if single_condition {
         // Process each record (line) in the CSV file
         for result in line_iter {
             // Get the next line from the iterator
             let record = result?;
-
-            // Split the line into individual fields
-            let record: Vec<&str> = record
-                .split(|&b| b == b',')
-                .map(|s| std::str::from_utf8(s).unwrap())
-                .collect();
+            let fields = extract_fields(&record, &headers, &required_headers);
 
             // Check if the record matches the condition specified in the command
             if condition_checker::evaluate_condition(
                 command.condition.as_ref().unwrap(),
-                &headers,
-                &record,
+                &required_headers,
+                &fields,
             ) {
-                // If the record matches the condition, print the record
-                println!("{}", record.join(","));
+                // Convert the byte slice to a string and print the entire record
+                let record_str = std::str::from_utf8(&record).unwrap();
+                println!("{}", record_str);
             }
         }
     } else {
@@ -300,17 +298,13 @@ fn handle_select_star_with_condition(
         for result in line_iter {
             // Get the next line from the iterator
             let record = result?;
-
-            // Split the line into individual fields
-            let record: Vec<&str> = record
-                .split(|&b| b == b',')
-                .map(|s| std::str::from_utf8(s).unwrap())
-                .collect();
+            let fields = extract_fields(&record, &headers, &required_headers);
 
             // Check if the record matches the condition specified in the command
-            if condition_checker::check_condition(command, &headers, &record) {
-                // If the record matches the condition, print the record
-                println!("{}", record.join(","));
+            if condition_checker::check_condition(command, &required_headers, &fields) {
+                // Convert the byte slice to a string and print the entire record
+                let record_str = std::str::from_utf8(&record).unwrap();
+                println!("{}", record_str);
             }
         }
     }
