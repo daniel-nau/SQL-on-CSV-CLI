@@ -210,21 +210,47 @@ fn handle_select_star_with_condition(
     let headers = get_headers(&mut line_iter)?;
     println!("{}", headers.join(","));
 
-    // Process each record (line) in the CSV file
-    for result in line_iter {
-        // Get the next line from the iterator
-        let record = result?;
+    // Check if there is only one condition
+    let single_condition = command
+        .condition
+        .as_deref()
+        .map_or(false, |cond| !cond.contains("AND") && !cond.contains("OR"));
 
-        // Split the line into individual fields
-        let record: Vec<&str> = record
-            .split(|&b| b == b',')
-            .map(|s| std::str::from_utf8(s).unwrap())
-            .collect();
+    if single_condition {
+        // Process each record (line) in the CSV file
+        for result in line_iter {
+            // Get the next line from the iterator
+            let record = result?;
 
-        // Check if the record matches the condition specified in the command
-        if condition_checker::check_condition(command, &headers, &record) {
-            // If the record matches the condition, print the record
-            println!("{}", record.join(","));
+            // Split the line into individual fields
+            let record: Vec<&str> = record
+                .split(|&b| b == b',')
+                .map(|s| std::str::from_utf8(s).unwrap())
+                .collect();
+
+            // Check if the record matches the condition specified in the command
+            if condition_checker::evaluate_condition(command.condition.as_ref().unwrap(), &headers, &record) {
+                // If the record matches the condition, print the record
+                println!("{}", record.join(","));
+            }
+        }
+    } else {
+        // Process each record (line) in the CSV file
+        for result in line_iter {
+            // Get the next line from the iterator
+            let record = result?;
+
+            // Split the line into individual fields
+            let record: Vec<&str> = record
+                .split(|&b| b == b',')
+                .map(|s| std::str::from_utf8(s).unwrap())
+                .collect();
+
+            // Check if the record matches the condition specified in the command
+            if condition_checker::check_condition(command, &headers, &record) {
+                // If the record matches the condition, print the record
+                println!("{}", record.join(","));
+            }
         }
     }
 
