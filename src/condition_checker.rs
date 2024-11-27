@@ -1,5 +1,4 @@
 use crate::sql_parser;
-use regex::Regex;
 
 // Modified helper function to evaluate compound WHERE clause with AND/OR
 pub fn check_condition(
@@ -23,36 +22,29 @@ pub fn check_condition(
 
 // Helper function to evaluate a single condition
 pub fn evaluate_condition(condition: &str, headers: &[String], record: &[&str]) -> bool {
-    let re = Regex::new(r"(\w+)\s*(=|!=|>|<|>=|<=)\s*'([^']*)'|(\w+)\s*(=|!=|>|<|>=|<=)\s*([\d.]+)").unwrap();
-    if let Some(caps) = re.captures(condition) {
-        let column_name = caps.get(1).or(caps.get(4)).unwrap().as_str();
-        let operator = caps.get(2).or(caps.get(5)).unwrap().as_str();
-        let value = caps.get(3).map_or_else(|| caps.get(6).unwrap().as_str(), |m| m.as_str());
+    let parts: Vec<&str> = condition.split_whitespace().collect();
+    if parts.len() == 3 {
+        let column_name = parts[0];
+        let operator = parts[1];
+        let value: f64 = parts[2].parse().unwrap_or(f64::NAN);
 
         if let Some(column_index) = headers.iter().position(|h| h == column_name) {
-            let record_value = record[column_index];
+            let field_value: f64 = record
+                .get(column_index)
+                .unwrap_or(&"")
+                .trim()
+                .parse()
+                .unwrap_or(f64::NAN);
 
-            if caps.get(3).is_some() {
-                // Handle string comparison
-                match operator {
-                    "=" => return record_value == value,
-                    "!=" => return record_value != value,
-                    _ => return false, // Unsupported operator for strings
-                }
-            } else {
-                // Handle numeric comparison
-                let numeric_value = value.parse::<f64>().unwrap();
-                let record_numeric_value = record_value.parse::<f64>().unwrap();
-                match operator {
-                    "=" => return record_numeric_value == numeric_value,
-                    "!=" => return record_numeric_value != numeric_value,
-                    ">" => return record_numeric_value > numeric_value,
-                    "<" => return record_numeric_value < numeric_value,
-                    ">=" => return record_numeric_value >= numeric_value,
-                    "<=" => return record_numeric_value <= numeric_value,
-                    _ => return false, // Unsupported operator for numbers
-                }
-            }
+            return match operator {
+                "<" => field_value < value,
+                ">" => field_value > value,
+                "<=" => field_value <= value,
+                ">=" => field_value >= value,
+                "=" => field_value == value,
+                "!=" => field_value != value,
+                _ => false,
+            };
         }
     }
     false
