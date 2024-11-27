@@ -31,6 +31,7 @@
 */
 
 use memchr::memchr_iter;
+use std::collections::HashSet;
 use std::env;
 use std::error::Error;
 use std::io::{self, Write};
@@ -96,6 +97,66 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn extract_field<'a>(
+    record: &'a [u8],
+    headers: &[String],
+    required_header: &str,
+) -> Option<&'a str> {
+    if let Some(index) = headers.iter().position(|h| h == required_header) {
+        let mut current_index = 0;
+        for field in record.split(|&b| b == b',') {
+            if current_index == index {
+                return Some(std::str::from_utf8(field).unwrap());
+            }
+            current_index += 1;
+        }
+    }
+    None
+}
+
+fn extract_fields<'a>(
+    record: &'a [u8],
+    headers: &[String],
+    required_headers: &[String],
+) -> Vec<&'a str> {
+    let mut fields = Vec::new();
+    for required_header in required_headers {
+        if let Some(index) = headers.iter().position(|h| h == required_header) {
+            let mut current_index = 0;
+            for field in record.split(|&b| b == b',') {
+                if current_index == index {
+                    fields.push(std::str::from_utf8(field).unwrap());
+                    break;
+                }
+                current_index += 1;
+            }
+        }
+    }
+    fields
+}
+
+fn extract_required_headers(headers: &[String], condition: &str) -> Vec<String> {
+    let mut required_headers_set = HashSet::new();
+    let parts: Vec<&str> = condition.split_whitespace().collect();
+
+    for part in parts {
+        if part != "AND"
+            && part != "OR"
+            && !part
+                .chars()
+                .all(|c| c.is_numeric() || c == '.' || c == '<' || c == '>' || c == '=' || c == '!')
+        {
+            required_headers_set.insert(part.to_string());
+        }
+    }
+
+    headers
+        .iter()
+        .filter(|header| required_headers_set.contains(*header))
+        .cloned()
+        .collect()
+}
+
 #[inline(never)]
 fn get_headers<'a>(
     line_iter: &mut impl Iterator<Item = io::Result<&'a [u8]>>,
@@ -149,26 +210,34 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
     let single_condition = !condition.contains("AND") && !condition.contains("OR");
 
     if single_condition {
-        // Process and count records matching the single condition
+        // Determine the required field from the condition
+        let parts: Vec<&str> = condition.split_whitespace().collect();
+        let required_header = parts[0];
+
         for result in line_iter {
             let record = result?;
-            let record: Vec<&str> = record
-                .split(|&b| b == b',')
-                .map(|s| std::str::from_utf8(s).unwrap())
-                .collect();
-            if condition_checker::evaluate_condition(condition, &headers, &record) {
-                count += 1;
+            if let Some(value) = extract_field(&record, &headers, required_header) {
+                let required_field = vec![value];
+                let required_headers = vec![required_header.to_string()];
+
+                if condition_checker::evaluate_condition(
+                    condition,
+                    &required_headers,
+                    &required_field,
+                ) {
+                    count += 1;
+                }
             }
         }
     } else {
+        let required_headers = extract_required_headers(&headers, condition);
+        // println!("{:?}", required_headers);
         // Process and count records matching the compound condition
         for result in line_iter {
             let record = result?;
-            let record: Vec<&str> = record
-                .split(|&b| b == b',')
-                .map(|s| std::str::from_utf8(s).unwrap())
-                .collect();
-            if condition_checker::check_condition(&parsed_command, &headers, &record) {
+            let fields = extract_fields(&record, &headers, &required_headers);
+
+            if condition_checker::check_condition(&parsed_command, &required_headers, &fields) {
                 count += 1;
             }
         }
