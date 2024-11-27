@@ -381,6 +381,8 @@ fn handle_aggregate_query(
         .map(|(i, h)| (h.clone(), i))
         .collect();
 
+    let required_headers = extract_required_headers(&headers, command.condition.as_ref().unwrap());
+
     // Apply aggregates to matching records
     if let Some(_condition) = &command.condition {
         // Check if there is only one condition
@@ -393,17 +395,18 @@ fn handle_aggregate_query(
             // Process each record (line) in the CSV file
             for result in line_iter {
                 let record = result?;
-                let record: Vec<&str> = record
-                    .split(|&b| b == b',')
-                    .map(|s| std::str::from_utf8(s).unwrap())
-                    .collect();
+                let fields = extract_fields(&record, &headers, &required_headers);
 
                 // Check if the record matches the single condition
                 if condition_checker::evaluate_condition(
                     command.condition.as_ref().unwrap(),
-                    &headers,
-                    &record,
+                    &required_headers,
+                    &fields,
                 ) {
+                    let record: Vec<&str> = record
+                        .split(|&b| b == b',')
+                        .map(|s| std::str::from_utf8(s).unwrap())
+                        .collect();
                     for (func, agg) in aggregates.functions.iter_mut() {
                         if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
                             if let Some(&index) = column_indices.get(column_name) {
@@ -416,54 +419,22 @@ fn handle_aggregate_query(
                 }
             }
         } else {
-            let single_condition = command
-                .condition
-                .as_deref()
-                .map_or(false, |cond| !cond.contains("AND") && !cond.contains("OR"));
+            // Process each record (line) in the CSV file
+            for result in line_iter {
+                let record = result?;
+                let fields = extract_fields(&record, &headers, &required_headers);
 
-            if single_condition {
-                // Process each record (line) in the CSV file
-                for result in line_iter {
-                    let record = result?;
+                // Check if the record matches the compound condition
+                if condition_checker::check_condition(command, &required_headers, &fields) {
                     let record: Vec<&str> = record
                         .split(|&b| b == b',')
                         .map(|s| std::str::from_utf8(s).unwrap())
                         .collect();
-
-                    // Check if the record matches the compound condition
-                    if condition_checker::evaluate_condition(
-                        command.condition.as_ref().unwrap(),
-                        &headers,
-                        &record,
-                    ) {
-                        for (func, agg) in aggregates.functions.iter_mut() {
-                            if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
-                                if let Some(&index) = column_indices.get(column_name) {
-                                    if let Ok(value) = record[index].parse::<f64>() {
-                                        agg.apply(value);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                // Process each record (line) in the CSV file
-                for result in line_iter {
-                    let record = result?;
-                    let record: Vec<&str> = record
-                        .split(|&b| b == b',')
-                        .map(|s| std::str::from_utf8(s).unwrap())
-                        .collect();
-
-                    // Check if the record matches the compound condition
-                    if condition_checker::check_condition(command, &headers, &record) {
-                        for (func, agg) in aggregates.functions.iter_mut() {
-                            if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
-                                if let Some(&index) = column_indices.get(column_name) {
-                                    if let Ok(value) = record[index].parse::<f64>() {
-                                        agg.apply(value);
-                                    }
+                    for (func, agg) in aggregates.functions.iter_mut() {
+                        if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
+                            if let Some(&index) = column_indices.get(column_name) {
+                                if let Ok(value) = record[index].parse::<f64>() {
+                                    agg.apply(value);
                                 }
                             }
                         }
