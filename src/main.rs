@@ -505,36 +505,78 @@ fn handle_column_selection_query(
     // Preallocate a buffer to avoid reallocations, based on column_indexes size
     let mut selected_fields_buffer = Vec::with_capacity(column_indexes.len());
 
+    let selected_headers: Vec<String> = extract_required_headers(&headers, &(command.columns.join(" ")));
+
     // Process records based on whether there is a condition or not
     if let Some(_condition) = &command.condition {
-        // There is a condition
-        for result in line_iter {
-            let record = result?;
+        // Get the headers from the WHERE clause
+        let checked_headers = extract_required_headers(&headers, command.condition.as_ref().unwrap());
 
-            // Split the line into fields and convert directly to UTF-8 strings
-            let record_str: Vec<&str> = record
-                .split(|&b| b == b',')
-                .map(|field| std::str::from_utf8(field).unwrap())
-                // .map(|field| unsafe {std::str::from_utf8_unchecked(field)}) // INFO: Saves about .02 seconds with "SELECT col_1 FROM data/small_tall.csv WHERE col_1 < .5"
-                .collect();
+        // Check if there is only one condition
+        let single_condition = command
+            .condition
+            .as_deref()
+            .map_or(false, |cond| !cond.contains("AND") && !cond.contains("OR"));
 
-            if condition_checker::check_condition(command, &headers, &record_str) {
-                // Select the fields based on the column indexes
-                for &index in &column_indexes {
-                    selected_fields_buffer.push(record_str[index].as_bytes());
-                }
+        // println!("{:?}", selected_headers);
 
-                // Write the selected fields directly to the writer
-                for (i, field) in selected_fields_buffer.iter().enumerate() {
-                    if i > 0 {
-                        writer.write_all(b",")?;
+        if single_condition {
+            // There is a condition
+            for result in line_iter {
+                let record = result?;
+                let checked_fields = extract_fields(&record, &headers, &checked_headers);
+
+                if condition_checker::evaluate_condition(
+                    command.condition.as_ref().unwrap(),
+                    &checked_headers,
+                    &checked_fields,
+                ) {
+                    let selected_fields = extract_fields(&record, &headers, &selected_headers);
+
+                    // Select the fields based on the column indexes
+                    for &index in &column_indexes {
+                        selected_fields_buffer.push(selected_fields[index].as_bytes());
                     }
-                    writer.write_all(field)?;
-                }
-                writer.write_all(b"\n")?;
 
-                // Reset the buffer for the next line by truncating it
-                selected_fields_buffer.truncate(0); // More efficient than clear() for reusing capacity
+                    // Write the selected fields directly to the writer
+                    for (i, field) in selected_fields_buffer.iter().enumerate() {
+                        if i > 0 {
+                            writer.write_all(b",")?;
+                        }
+                        writer.write_all(field)?;
+                    }
+                    writer.write_all(b"\n")?;
+
+                    // Reset the buffer for the next line by truncating it
+                    selected_fields_buffer.truncate(0); // More efficient than clear() for reusing capacity
+                }
+            }
+        } else {
+            // There is a condition
+            for result in line_iter {
+                let record = result?;
+                let checked_fields = extract_fields(&record, &headers, &checked_headers);
+
+                if condition_checker::check_condition(command, &checked_headers, &checked_fields) {
+                    let selected_fields = extract_fields(&record, &headers, &selected_headers);
+
+                    // Select the fields based on the column indexes
+                    for &index in &column_indexes {
+                        selected_fields_buffer.push(selected_fields[index].as_bytes());
+                    }
+
+                    // Write the selected fields directly to the writer
+                    for (i, field) in selected_fields_buffer.iter().enumerate() {
+                        if i > 0 {
+                            writer.write_all(b",")?;
+                        }
+                        writer.write_all(field)?;
+                    }
+                    writer.write_all(b"\n")?;
+
+                    // Reset the buffer for the next line by truncating it
+                    selected_fields_buffer.truncate(0); // More efficient than clear() for reusing capacity
+                }
             }
         }
 
@@ -543,24 +585,21 @@ fn handle_column_selection_query(
         // No condition
         for result in line_iter {
             let record = result?;
-
-            // Split the line into fields (without creating unnecessary allocations)
-            let fields: Vec<&[u8]> = record.split(|&b| b == b',').collect();
+            let selected_fields = extract_fields(&record, &headers, &selected_headers);
 
             // Select the fields based on the column indexes
             for &index in &column_indexes {
-                selected_fields_buffer.push(fields[index]);
+                selected_fields_buffer.push(selected_fields[index].as_bytes());
             }
 
-            // Join selected fields into a CSV line (using byte slices directly)
-            let csv_line = selected_fields_buffer
-                .iter()
-                .map(|&field| String::from_utf8_lossy(field)) // Convert byte slice to UTF-8
-                .collect::<Vec<_>>()
-                .join(","); // Join the fields with commas
-
-            // Write the joined line followed by a newline
-            writeln!(writer, "{}", csv_line)?;
+            // Write the selected fields directly to the writer
+            for (i, field) in selected_fields_buffer.iter().enumerate() {
+                if i > 0 {
+                    writer.write_all(b",")?;
+                }
+                writer.write_all(field)?;
+            }
+            writer.write_all(b"\n")?;
 
             // Reset the buffer for the next line by truncating it
             selected_fields_buffer.truncate(0); // More efficient than clear() for reusing capacity
