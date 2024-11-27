@@ -127,9 +127,9 @@ fn get_headers<'a>(
 /// Counts the number of rows in the CSV file (excluding the header row).
 fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
     let mmap = csv_reader::map_file(file_path)?; // Memory-map the file
-    // let line_count = mmap.iter().filter(|&&b| b == b'\n').count(); // Count newline characters
+                                                 // let line_count = mmap.iter().filter(|&&b| b == b'\n').count(); // Count newline characters
     let line_count = memchr_iter(b'\n', &mmap).count(); // Count newline characters using memchr
-    
+
     // Check if the last byte is a newline character
     let last_byte_is_newline = mmap.last() == Some(&b'\n');
 
@@ -157,17 +157,35 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
         condition: Some(condition.to_string()),
     };
 
-    // Process and count records matching the condition
-    for result in line_iter {
-        let record = result?;
-        let record: Vec<&str> = record
-            .split(|&b| b == b',')
-            .map(|s| std::str::from_utf8(s).unwrap())
-            .collect();
-        if condition_checker::check_condition(&parsed_command, &headers, &record) {
-            count += 1;
+    // Check if there is only one condition
+    let single_condition = !condition.contains("AND") && !condition.contains("OR");
+
+    if single_condition {
+        // Process and count records matching the single condition
+        for result in line_iter {
+            let record = result?;
+            let record: Vec<&str> = record
+                .split(|&b| b == b',')
+                .map(|s| std::str::from_utf8(s).unwrap())
+                .collect();
+            if condition_checker::evaluate_condition(condition, &headers, &record) {
+                count += 1;
+            }
+        }
+    } else {
+        // Process and count records matching the compound condition
+        for result in line_iter {
+            let record = result?;
+            let record: Vec<&str> = record
+                .split(|&b| b == b',')
+                .map(|s| std::str::from_utf8(s).unwrap())
+                .collect();
+            if condition_checker::check_condition(&parsed_command, &headers, &record) {
+                count += 1;
+            }
         }
     }
+
     Ok(count)
 }
 
