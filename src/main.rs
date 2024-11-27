@@ -229,7 +229,11 @@ fn handle_select_star_with_condition(
                 .collect();
 
             // Check if the record matches the condition specified in the command
-            if condition_checker::evaluate_condition(command.condition.as_ref().unwrap(), &headers, &record) {
+            if condition_checker::evaluate_condition(
+                command.condition.as_ref().unwrap(),
+                &headers,
+                &record,
+            ) {
                 // If the record matches the condition, print the record
                 println!("{}", record.join(","));
             }
@@ -328,19 +332,55 @@ fn handle_aggregate_query(
 
     // Apply aggregates to matching records
     if let Some(_condition) = &command.condition {
-        // There is a condition
-        for result in line_iter {
-            let record = result?;
-            let record: Vec<&str> = record
-                .split(|&b| b == b',')
-                .map(|s| std::str::from_utf8(s).unwrap())
-                .collect();
-            if condition_checker::check_condition(command, &headers, &record) {
-                for (func, agg) in aggregates.functions.iter_mut() {
-                    if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
-                        if let Some(&index) = column_indices.get(column_name) {
-                            if let Ok(value) = record[index].parse::<f64>() {
-                                agg.apply(value);
+        // Check if there is only one condition
+        let single_condition = command
+            .condition
+            .as_deref()
+            .map_or(false, |cond| !cond.contains("AND") && !cond.contains("OR"));
+
+        if single_condition {
+            // Process each record (line) in the CSV file
+            for result in line_iter {
+                let record = result?;
+                let record: Vec<&str> = record
+                    .split(|&b| b == b',')
+                    .map(|s| std::str::from_utf8(s).unwrap())
+                    .collect();
+
+                // Check if the record matches the single condition
+                if condition_checker::evaluate_condition(
+                    command.condition.as_ref().unwrap(),
+                    &headers,
+                    &record,
+                ) {
+                    for (func, agg) in aggregates.functions.iter_mut() {
+                        if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
+                            if let Some(&index) = column_indices.get(column_name) {
+                                if let Ok(value) = record[index].parse::<f64>() {
+                                    agg.apply(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Process each record (line) in the CSV file
+            for result in line_iter {
+                let record = result?;
+                let record: Vec<&str> = record
+                    .split(|&b| b == b',')
+                    .map(|s| std::str::from_utf8(s).unwrap())
+                    .collect();
+
+                // Check if the record matches the compound condition
+                if condition_checker::check_condition(command, &headers, &record) {
+                    for (func, agg) in aggregates.functions.iter_mut() {
+                        if let Some(column_name) = func.split(&['(', ')'][..]).nth(1) {
+                            if let Some(&index) = column_indices.get(column_name) {
+                                if let Ok(value) = record[index].parse::<f64>() {
+                                    agg.apply(value);
+                                }
                             }
                         }
                     }
