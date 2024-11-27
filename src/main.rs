@@ -381,10 +381,9 @@ fn handle_aggregate_query(
         .map(|(i, h)| (h.clone(), i))
         .collect();
 
-    let required_headers = extract_required_headers(&headers, command.condition.as_ref().unwrap());
-
     // Apply aggregates to matching records
     if let Some(_condition) = &command.condition {
+        let required_headers = extract_required_headers(&headers, command.condition.as_ref().unwrap());
         // Check if there is only one condition
         let single_condition = command
             .condition
@@ -495,17 +494,17 @@ fn handle_column_selection_query(
     // Print the selected columns as the header
     writeln!(writer, "{}", command.columns.join(","))?;
 
+    let selected_headers: Vec<String> = extract_required_headers(&headers, &(command.columns.join(" ")));
+
     // Map column names to their indexes
     let column_indexes: Vec<_> = command
         .columns
         .iter()
-        .filter_map(|col| headers.iter().position(|h| h.trim() == col))
+        .filter_map(|col| selected_headers.iter().position(|h| h.trim() == col))
         .collect();
 
     // Preallocate a buffer to avoid reallocations, based on column_indexes size
     let mut selected_fields_buffer = Vec::with_capacity(column_indexes.len());
-
-    let selected_headers: Vec<String> = extract_required_headers(&headers, &(command.columns.join(" ")));
 
     // Process records based on whether there is a condition or not
     if let Some(_condition) = &command.condition {
