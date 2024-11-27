@@ -129,7 +129,18 @@ fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
     let mmap = csv_reader::map_file(file_path)?; // Memory-map the file
     // let line_count = mmap.iter().filter(|&&b| b == b'\n').count(); // Count newline characters
     let line_count = memchr_iter(b'\n', &mmap).count(); // Count newline characters using memchr
-    Ok(line_count - 1) // Exclude the header
+    
+    // Check if the last byte is a newline character
+    let last_byte_is_newline = mmap.last() == Some(&b'\n');
+
+    // If the last byte is not a newline, increment the line count by one
+    let total_lines = if last_byte_is_newline {
+        line_count
+    } else {
+        line_count + 1
+    };
+
+    Ok(total_lines - 1) // Exclude the header
 }
 
 /// Counts rows in the CSV file that satisfy a given condition.
