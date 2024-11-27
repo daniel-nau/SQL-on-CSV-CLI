@@ -6,6 +6,7 @@
     - #4. Do improvements and optimizations (UPDATE CARGO.TOML VERSION AND DO cargo pkgid TO SEE VERSIONS)
     - Do run_and_measure fore different queries and use those results and flamegraphs to optimize
     - Use flamegraphs and mainly work on optimizing output (and then other parts)
+    - Use evaluate_condition if there's only 1 condition
     - WORK ON READER! (SEE IF I CAN USE BufReader)
     - Fix WHERE with OR
     - Put all of the file processing in a separate file
