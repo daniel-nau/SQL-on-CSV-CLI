@@ -1,33 +1,22 @@
 /*
     TODO:
-    - #1. Testing to make sure the outputs are correct
-    - #2. Do benchmarking (increase # of runs for mine and DuckDB)
-    - #3. Generate flamegraphs for profiling and keep tracks of what I did to optimize for my report (different versions/executable names?)
-    - #4. Do improvements and optimizations (UPDATE CARGO.TOML VERSION AND DO cargo pkgid TO SEE VERSIONS)
-    - Do run_and_measure fore different queries and use those results and flamegraphs to optimize
-    - Use flamegraphs and mainly work on optimizing output (and then other parts)
-    - Put all of the file processing in a separate file
-    - Double check outputs (COUNT(*) and general format)
-    - https://users.rust-lang.org/t/how-can-i-input-and-output-contents-fastest-in-output-stream-in-a-oj-system/61054/2
-    - IN REPORT AND SLIDES, SHOW THAT TIME IS "REAL" TIME
-    - Do smaller files to make sure the output is the same
-    - Use float32 instead of float64?
-    - Add support for strings
-    - Ensure robust error handling
-    - Add types?
-    - Refactor code into smaller, more modular functions and clean up code
-    - Remove #[inline(never)] for final benchmarking
-    - Optimize and explore alternatives for better performance ()
-        - Consider avoiding Vecs where possible
-        - Use references instead of cloning strings
-        - Look into other stuff
-        - rustfmt and clippy: https://www.reddit.com/r/rust/comments/w25npu/how_does_rust_optimize_this_code_to_increase_the/
-            - cargo fmt and cargo clippy
-        - Research other optimizations: https://users.rust-lang.org/t/can-anyone-share-tips-for-optimize-coding-in-rust/45406/2
-    - Document the code and provide examples
-    - Prepare for release and strip the binary ([profile.release] optimizations (opt-level))
-    - Run thorough testing and benchmarking (add automated tests?)
-        - Find alternative CSV files to test with
+    - Make a final build
+        - cargo fmt and cargo clippy
+        - Remove #[inline(never)] for final benchmarking
+        - Optimize the build (strip, lto, etc.) in Cargo.toml  
+        - cargo build --release
+        - Strip the release binary 
+    - Do testing with smaller file and compare with DuckDB output
+    - Do final benchmarking on Isengard 
+        - More runs
+        - Compare final version with DuckDB and V1
+    - Put on GitHub and create a README
+
+    Future work:
+    - Better error handling
+    - Put all of the file processing in a separate file to refactor
+    - Add better string support
+    - Add more SQL features
 */
 
 use memchr::memchr_iter;
@@ -103,12 +92,10 @@ fn extract_field<'a>(
     required_header: &str,
 ) -> Option<&'a str> {
     if let Some(index) = headers.iter().position(|h| h == required_header) {
-        let mut current_index = 0;
-        for field in record.split(|&b| b == b',') {
+        for (current_index, field) in record.split(|&b| b == b',').enumerate() {
             if current_index == index {
                 return Some(std::str::from_utf8(field).unwrap());
             }
-            current_index += 1;
         }
     }
     None
@@ -122,13 +109,11 @@ fn extract_fields<'a>(
     let mut fields = Vec::new();
     for required_header in required_headers {
         if let Some(index) = headers.iter().position(|h| h == required_header) {
-            let mut current_index = 0;
-            for field in record.split(|&b| b == b',') {
+            for (current_index, field) in record.split(|&b| b == b',').enumerate() {
                 if current_index == index {
                     fields.push(std::str::from_utf8(field).unwrap());
                     break;
                 }
-                current_index += 1;
             }
         }
     }
@@ -216,7 +201,7 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
 
         for result in line_iter {
             let record = result?;
-            if let Some(value) = extract_field(&record, &headers, required_header) {
+            if let Some(value) = extract_field(record, &headers, required_header) {
                 let required_field = vec![value];
                 let required_headers = vec![required_header.to_string()];
 
@@ -235,7 +220,7 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
         // Process and count records matching the compound condition
         for result in line_iter {
             let record = result?;
-            let fields = extract_fields(&record, &headers, &required_headers);
+            let fields = extract_fields(record, &headers, &required_headers);
 
             if condition_checker::check_condition(&parsed_command, &required_headers, &fields) {
                 count += 1;
@@ -280,7 +265,7 @@ fn handle_select_star_with_condition(
         for result in line_iter {
             // Get the next line from the iterator
             let record = result?;
-            let fields = extract_fields(&record, &headers, &required_headers);
+            let fields = extract_fields(record, &headers, &required_headers);
 
             // Check if the record matches the condition specified in the command
             if condition_checker::evaluate_condition(
@@ -289,7 +274,7 @@ fn handle_select_star_with_condition(
                 &fields,
             ) {
                 // Convert the byte slice to a string and print the entire record
-                let record_str = std::str::from_utf8(&record).unwrap();
+                let record_str = std::str::from_utf8(record).unwrap();
                 println!("{}", record_str);
             }
         }
@@ -298,12 +283,12 @@ fn handle_select_star_with_condition(
         for result in line_iter {
             // Get the next line from the iterator
             let record = result?;
-            let fields = extract_fields(&record, &headers, &required_headers);
+            let fields = extract_fields(record, &headers, &required_headers);
 
             // Check if the record matches the condition specified in the command
             if condition_checker::check_condition(command, &required_headers, &fields) {
                 // Convert the byte slice to a string and print the entire record
-                let record_str = std::str::from_utf8(&record).unwrap();
+                let record_str = std::str::from_utf8(record).unwrap();
                 println!("{}", record_str);
             }
         }
@@ -383,7 +368,8 @@ fn handle_aggregate_query(
 
     // Apply aggregates to matching records
     if let Some(_condition) = &command.condition {
-        let required_headers = extract_required_headers(&headers, command.condition.as_ref().unwrap());
+        let required_headers =
+            extract_required_headers(&headers, command.condition.as_ref().unwrap());
         // Check if there is only one condition
         let single_condition = command
             .condition
@@ -394,7 +380,7 @@ fn handle_aggregate_query(
             // Process each record (line) in the CSV file
             for result in line_iter {
                 let record = result?;
-                let fields = extract_fields(&record, &headers, &required_headers);
+                let fields = extract_fields(record, &headers, &required_headers);
 
                 // Check if the record matches the single condition
                 if condition_checker::evaluate_condition(
@@ -421,7 +407,7 @@ fn handle_aggregate_query(
             // Process each record (line) in the CSV file
             for result in line_iter {
                 let record = result?;
-                let fields = extract_fields(&record, &headers, &required_headers);
+                let fields = extract_fields(record, &headers, &required_headers);
 
                 // Check if the record matches the compound condition
                 if condition_checker::check_condition(command, &required_headers, &fields) {
@@ -494,7 +480,8 @@ fn handle_column_selection_query(
     // Print the selected columns as the header
     writeln!(writer, "{}", command.columns.join(","))?;
 
-    let selected_headers: Vec<String> = extract_required_headers(&headers, &(command.columns.join(" ")));
+    let selected_headers: Vec<String> =
+        extract_required_headers(&headers, &(command.columns.join(" ")));
 
     // Map column names to their indexes
     let column_indexes: Vec<_> = command
@@ -509,7 +496,8 @@ fn handle_column_selection_query(
     // Process records based on whether there is a condition or not
     if let Some(_condition) = &command.condition {
         // Get the headers from the WHERE clause
-        let checked_headers = extract_required_headers(&headers, command.condition.as_ref().unwrap());
+        let checked_headers =
+            extract_required_headers(&headers, command.condition.as_ref().unwrap());
 
         // Check if there is only one condition
         let single_condition = command
@@ -523,14 +511,14 @@ fn handle_column_selection_query(
             // There is a condition
             for result in line_iter {
                 let record = result?;
-                let checked_fields = extract_fields(&record, &headers, &checked_headers);
+                let checked_fields = extract_fields(record, &headers, &checked_headers);
 
                 if condition_checker::evaluate_condition(
                     command.condition.as_ref().unwrap(),
                     &checked_headers,
                     &checked_fields,
                 ) {
-                    let selected_fields = extract_fields(&record, &headers, &selected_headers);
+                    let selected_fields = extract_fields(record, &headers, &selected_headers);
 
                     // Select the fields based on the column indexes
                     for &index in &column_indexes {
@@ -554,10 +542,10 @@ fn handle_column_selection_query(
             // There is a condition
             for result in line_iter {
                 let record = result?;
-                let checked_fields = extract_fields(&record, &headers, &checked_headers);
+                let checked_fields = extract_fields(record, &headers, &checked_headers);
 
                 if condition_checker::check_condition(command, &checked_headers, &checked_fields) {
-                    let selected_fields = extract_fields(&record, &headers, &selected_headers);
+                    let selected_fields = extract_fields(record, &headers, &selected_headers);
 
                     // Select the fields based on the column indexes
                     for &index in &column_indexes {
@@ -584,7 +572,7 @@ fn handle_column_selection_query(
         // No condition
         for result in line_iter {
             let record = result?;
-            let selected_fields = extract_fields(&record, &headers, &selected_headers);
+            let selected_fields = extract_fields(record, &headers, &selected_headers);
 
             // Select the fields based on the column indexes
             for &index in &column_indexes {
