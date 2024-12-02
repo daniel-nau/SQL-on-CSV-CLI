@@ -32,7 +32,7 @@ mod csv_reader;
 mod sql_parser;
 
 /// Main entry point for the program.
-#[inline(never)]
+// #[inline(never)]
 fn main() -> Result<(), Box<dyn Error>> {
     // Parse command-line arguments
     let args: Vec<String> = env::args().collect();
@@ -142,7 +142,7 @@ fn extract_required_headers(headers: &[String], condition: &str) -> Vec<String> 
         .collect()
 }
 
-#[inline(never)]
+// #[inline(never)]
 fn get_headers<'a>(
     line_iter: &mut impl Iterator<Item = io::Result<&'a [u8]>>,
 ) -> Result<Vec<String>, Box<dyn Error>> {
@@ -298,7 +298,7 @@ fn handle_select_star_with_condition(
 }
 
 /// Handles more complex queries with aggregate functions or column selections.
-#[inline(never)]
+// #[inline(never)]
 fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), Box<dyn Error>> {
     let mut csv_reader = csv_reader::CsvReader::new(&command.data_file)?;
     let is_aggregate_query = command
@@ -316,7 +316,7 @@ fn handle_complex_query(command: &mut sql_parser::ParsedCommand) -> Result<(), B
 }
 
 /// Handles queries with aggregate functions (e.g., SUM, AVG, MIN).
-#[inline(never)]
+// #[inline(never)]
 fn handle_aggregate_query(
     command: &mut sql_parser::ParsedCommand,
     csv_reader: &mut csv_reader::CsvReader,
@@ -465,7 +465,7 @@ fn handle_aggregate_query(
 }
 
 /// Handles column selection queries (e.g., "SELECT col1, col2").
-#[inline(never)]
+// #[inline(never)]
 fn handle_column_selection_query(
     command: &sql_parser::ParsedCommand,
     csv_reader: &mut csv_reader::CsvReader,
