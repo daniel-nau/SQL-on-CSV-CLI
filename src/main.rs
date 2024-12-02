@@ -60,12 +60,14 @@ fn main() -> Result<(), Box<dyn Error>> {
                 // Handle "SELECT COUNT(*) FROM <file> WHERE <condition>"
                 (1, Some(col), Some(condition)) if col == "COUNT(*)" => {
                     let count = count_with_condition(&command.data_file, condition)?;
-                    println!("COUNT(*): {}", count);
+                    println!("COUNT(*)");
+                    println!("{}", count);
                 }
                 // Handle "SELECT COUNT(*) FROM <file>"
                 (1, Some(col), _none) if col == "COUNT(*)" => {
                     let count = count_star(&command.data_file)?;
-                    println!("COUNT(*): {}", count);
+                    println!("COUNT(*)");
+                    println!("{}", count);
                 }
                 // Handle "SELECT * FROM <file> WHERE <condition>"
                 (1, Some(col), Some(_)) if col == "*" => {
@@ -449,6 +451,8 @@ fn handle_aggregate_query(
 
     // Output aggregate results
     let results = aggregates.results(&command.columns);
+    let mut labels = Vec::new();
+    let mut values = Vec::new();
     for column in &command.columns {
         let label = if column.starts_with("COUNT(") && column.contains(&headers[0]) {
             "COUNT(*)".to_string()
@@ -458,8 +462,13 @@ fn handle_aggregate_query(
         let value = results
             .get(column)
             .map_or("NaN".to_string(), |v| v.to_string());
-        println!("{}: {}", label, value);
+        // println!("{}: {}", label, value);
+        labels.push(label);
+        values.push(value);
     }
+
+    println!("{}", labels.join(","));
+    println!("{}", values.join(","));
 
     Ok(())
 }
