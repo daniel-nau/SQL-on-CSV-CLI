@@ -200,15 +200,14 @@ fn count_with_condition(file_path: &str, condition: &str) -> Result<usize, Box<d
 
     if single_condition {
         // Determine the required field from the condition
-        let parts: Vec<&str> = condition.split_whitespace().collect();
-        let required_header = parts[0];
+        let parts: Vec<&str> = condition.split_whitespace().collect(); // Split the condition/WHERE clause
+        let required_header = parts[0]; // Get the first part of the condition, the column name
+        let required_headers = vec![required_header.to_string()];
 
         for result in line_iter {
             let record = result?;
             if let Some(value) = extract_field(record, &headers, required_header) {
                 let required_field = vec![value];
-                let required_headers = vec![required_header.to_string()];
-
                 if condition_checker::evaluate_condition(
                     condition,
                     &required_headers,
