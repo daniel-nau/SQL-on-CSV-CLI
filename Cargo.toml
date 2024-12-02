@@ -14,12 +14,12 @@ memmap2 = "0.5"
 memchr = "2.4"
 
 [profile.release.package."*"]
-debug = false // true
+debug = false # true
 
 [profile.release]
-debug = false // true
+debug = false # true
 opt-level = 3
-lto = true // false
+lto = true # false
 codegen-units = 1
-debug-assertions = false // true
-strip = "symbols" // false
+debug-assertions = false # true
+strip = "symbols" # false
