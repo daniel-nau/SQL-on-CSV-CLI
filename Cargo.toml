@@ -1,5 +1,5 @@
 [package]
-name = "csvsql_v2"
+name = "csvsql_v2_benchmark"
 version = "0.2.4"
 edition = "2021"
 
