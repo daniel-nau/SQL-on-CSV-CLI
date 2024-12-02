@@ -161,7 +161,7 @@ fn get_headers<'a>(
 /// Counts the number of rows in the CSV file (excluding the header row).
 fn count_star(file_path: &str) -> Result<usize, Box<dyn Error>> {
     let mmap = csv_reader::map_file(file_path)?; // Memory-map the file
-                                                 // let line_count = mmap.iter().filter(|&&b| b == b'\n').count(); // Count newline characters
+    // let line_count = mmap.iter().filter(|&&b| b == b'\n').count(); // Count newline characters
     let line_count = memchr_iter(b'\n', &mmap).count(); // Count newline characters using memchr
 
     // Check if the last byte is a newline character
