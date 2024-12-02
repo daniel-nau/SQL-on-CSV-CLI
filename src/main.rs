@@ -15,6 +15,8 @@
     Future work:
     - Better error handling
     - Put all of the file processing in a separate file to refactor
+    - Pre-compute WHERE clause for aggregates to prevent redundant splitting in check_condition()
+    - Improve aggregate functions
     - Add better string support
     - Add more SQL features
 */
