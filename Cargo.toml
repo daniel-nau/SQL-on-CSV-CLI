@@ -1,6 +1,6 @@
 [package]
-name = "csvsql_v2_3"
-version = "0.2.3"
+name = "csvsql_v2"
+version = "0.2.4"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -14,12 +14,12 @@ memmap2 = "0.5"
 memchr = "2.4"
 
 [profile.release.package."*"]
-debug = true
+debug = false // true
 
 [profile.release]
-debug = true
+debug = false // true
 opt-level = 3
-lto = false
+lto = true // false
 codegen-units = 1
-debug-assertions = true
-strip = false
+debug-assertions = false // true
+strip = "symbols" // false
