@@ -548,6 +548,8 @@ fn handle_column_selection_query(
                     selected_fields_buffer.truncate(0); // More efficient than clear() for reusing capacity
                 }
             }
+
+            writer.flush()?; // Ensure all output is written to stdout
         } else {
             // There is a condition
             for result in line_iter {
